@@ -1,214 +1,267 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
-/// A widget that provides state transitions for buttons.
-class ButtonStates extends StatefulWidget {
-  /// Creates a button states widget with the specified transitions.
-  const ButtonStates({
-    required this.stateKey,
-    required this.child,
-    required this.onLoading,
-    required this.onSuccess,
-    required this.onError,
-    this.duration = const Duration(milliseconds: 300),
-  }) : super(key: stateKey);
+import 'utils/motion.dart';
 
-  /// The key to access the state.
-  final GlobalKey<ButtonStatesState> stateKey;
+/// The possible visual states of a [ButtonStates] widget.
+enum MicroButtonState {
+  /// The resting state; the original child is shown.
+  idle,
 
-  /// The child widget to animate.
-  final Widget child;
+  /// A loading indicator is shown.
+  loading,
 
-  /// The widget to show during loading state.
-  final Widget Function() onLoading;
+  /// A success indicator is shown.
+  success,
 
-  /// The widget to show during success state.
-  final Widget Function() onSuccess;
-
-  /// The widget to show during error state.
-  final Widget Function() onError;
-
-  /// The duration of the transitions.
-  final Duration duration;
-
-  /// Creates a button with state transitions.
-  static ButtonStates withTransitions({
-    required Widget Function() onLoading,
-    required Widget Function() onSuccess,
-    required Widget Function() onError,
-    Duration duration = const Duration(milliseconds: 300),
-    required Widget child,
-  }) {
-    return ButtonStates(
-      stateKey: GlobalKey<ButtonStatesState>(),
-      onLoading: onLoading,
-      onSuccess: onSuccess,
-      onError: onError,
-      duration: duration,
-      child: child,
-    );
-  }
-
-  /// Sets the button state to loading.
-  void setLoading() {
-    (stateKey.currentState as ButtonStatesState).setLoading();
-  }
-
-  /// Sets the button state to success.
-  void setSuccess() {
-    (stateKey.currentState as ButtonStatesState).setSuccess();
-  }
-
-  /// Sets the button state to error.
-  void setError() {
-    (stateKey.currentState as ButtonStatesState).setError();
-  }
-
-  /// Resets the button state to initial.
-  void reset() {
-    (stateKey.currentState as ButtonStatesState).reset();
-  }
-
-  @override
-  State<ButtonStates> createState() => ButtonStatesState();
+  /// An error indicator is shown.
+  error,
 }
 
-class ButtonStatesState extends State<ButtonStates> with SingleTickerProviderStateMixin {
-  ButtonState _currentState = ButtonState.initial;
-  late AnimationController _controller;
-  late Animation<double> _animation;
+/// Programmatic control surface for a [ButtonStates] widget.
+///
+/// Create one controller per button, keep it in your State, and call
+/// [setLoading], [setSuccess], [setError] or [setIdle] to drive the
+/// transitions. Dispose it when you are done.
+///
+/// ```dart
+/// final _controller = ButtonStateController();
+///
+/// Future<void> _save() async {
+///   _controller.setLoading();
+///   try {
+///     await api.save();
+///     _controller.setSuccess();
+///   } catch (_) {
+///     _controller.setError();
+///   }
+/// }
+/// ```
+class ButtonStateController extends ChangeNotifier {
+  /// Creates a controller starting in [MicroButtonState.idle].
+  ButtonStateController([MicroButtonState initialState = MicroButtonState.idle])
+      : _state = initialState;
+
+  MicroButtonState _state;
+
+  /// The current state.
+  MicroButtonState get state => _state;
+
+  /// Moves the button back to [MicroButtonState.idle].
+  void setIdle() => _setState(MicroButtonState.idle);
+
+  /// Moves the button to [MicroButtonState.loading].
+  void setLoading() => _setState(MicroButtonState.loading);
+
+  /// Moves the button to [MicroButtonState.success].
+  void setSuccess() => _setState(MicroButtonState.success);
+
+  /// Moves the button to [MicroButtonState.error].
+  void setError() => _setState(MicroButtonState.error);
+
+  void _setState(MicroButtonState value) {
+    if (_state == value) return;
+    _state = value;
+    notifyListeners();
+  }
+}
+
+/// Animates a button (or any widget) between idle, loading, success and
+/// error content.
+///
+/// The widget renders [child] while idle and swaps to the widget produced
+/// by [loadingBuilder], [successBuilder] or [errorBuilder] using an
+/// [AnimatedSwitcher] wrapped in an [AnimatedSize], so both the content
+/// and the footprint animate. The original [child] is rendered as-is; this
+/// widget never rebuilds or reconstructs it.
+///
+/// State is driven by a [ButtonStateController]:
+///
+/// ```dart
+/// ButtonStates(
+///   controller: _controller,
+///   child: ElevatedButton(
+///     onPressed: _save,
+///     child: const Text('Save'),
+///   ),
+/// )
+/// ```
+///
+/// Each state change is announced to assistive technology. When the
+/// platform requests reduced motion the swap happens instantly.
+class ButtonStates extends StatefulWidget {
+  /// Creates a state-transition wrapper driven by [controller].
+  const ButtonStates({
+    super.key,
+    required this.controller,
+    required this.child,
+    this.loadingBuilder,
+    this.successBuilder,
+    this.errorBuilder,
+    this.duration = const Duration(milliseconds: 300),
+    this.curve = Curves.easeInOut,
+    this.autoResetDuration,
+    this.onStateChanged,
+  });
+
+  /// Drives which state is shown. This widget listens to it and rebuilds
+  /// on changes. The caller owns and disposes the controller.
+  final ButtonStateController controller;
+
+  /// The widget shown in [MicroButtonState.idle].
+  final Widget child;
+
+  /// Builds the loading content. Defaults to a small circular progress
+  /// indicator using the theme's primary color.
+  final WidgetBuilder? loadingBuilder;
+
+  /// Builds the success content. Defaults to a check icon using the
+  /// theme's primary color.
+  final WidgetBuilder? successBuilder;
+
+  /// Builds the error content. Defaults to an error icon using the
+  /// theme's error color.
+  final WidgetBuilder? errorBuilder;
+
+  /// Length of the swap animation. Defaults to 300 milliseconds.
+  final Duration duration;
+
+  /// Curve of the swap animation. Defaults to [Curves.easeInOut].
+  final Curve curve;
+
+  /// When non-null, success and error states automatically revert to
+  /// [MicroButtonState.idle] after this duration.
+  final Duration? autoResetDuration;
+
+  /// Called whenever the state changes, after the change is applied.
+  final ValueChanged<MicroButtonState>? onStateChanged;
+
+  @override
+  State<ButtonStates> createState() => _ButtonStatesState();
+}
+
+class _ButtonStatesState extends State<ButtonStates> {
+  Timer? _resetTimer;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-      value: 1.0, // Start with full visibility
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    widget.controller.addListener(_handleControllerChanged);
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  /// Sets the button state to loading.
-  void setLoading() {
-    setState(() {
-      _currentState = ButtonState.loading;
-    });
-    _controller.reset();
-    _controller.forward();
-  }
-
-  /// Sets the button state to success.
-  void setSuccess() {
-    setState(() {
-      _currentState = ButtonState.success;
-    });
-    _controller.reset();
-    _controller.forward();
-  }
-
-  /// Sets the button state to error.
-  void setError() {
-    setState(() {
-      _currentState = ButtonState.error;
-    });
-    _controller.reset();
-    _controller.forward();
-  }
-
-  /// Resets the button state to initial.
-  void reset() {
-    setState(() {
-      _currentState = ButtonState.initial;
-    });
-    _controller.reset();
-    _controller.forward();
-  }
-
-  Widget _buildStateWidget() {
-    switch (_currentState) {
-      case ButtonState.initial:
-        return widget.child;
-      case ButtonState.loading:
-      case ButtonState.success:
-      case ButtonState.error:
-        // For non-initial states, we need to preserve the button structure
-        // but replace its content
-        if (widget.child is ElevatedButton) {
-          final button = widget.child as ElevatedButton;
-          Widget stateContent;
-          switch (_currentState) {
-            case ButtonState.loading:
-              stateContent = widget.onLoading();
-              break;
-            case ButtonState.success:
-              stateContent = widget.onSuccess();
-              break;
-            case ButtonState.error:
-              stateContent = widget.onError();
-              break;
-            default:
-              stateContent = button.child ?? const SizedBox();
-          }
-          return ElevatedButton(
-            onPressed: null, // Disable button during state transitions
-            style: button.style,
-            child: stateContent,
-          );
-        }
-        // Fallback for other widget types
-        switch (_currentState) {
-          case ButtonState.loading:
-            return widget.onLoading();
-          case ButtonState.success:
-            return widget.onSuccess();
-          case ButtonState.error:
-            return widget.onError();
-          default:
-            return widget.child;
-        }
+  void didUpdateWidget(ButtonStates oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_handleControllerChanged);
+      widget.controller.addListener(_handleControllerChanged);
+      _resetTimer?.cancel();
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 0.9 + (_animation.value * 0.1),
-          child: Opacity(
-            opacity: 0.7 + (_animation.value * 0.3),
-            child: child,
+  void dispose() {
+    widget.controller.removeListener(_handleControllerChanged);
+    _resetTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleControllerChanged() {
+    if (!mounted) return;
+    final MicroButtonState state = widget.controller.state;
+    setState(() {});
+    _resetTimer?.cancel();
+    if (widget.autoResetDuration != null &&
+        (state == MicroButtonState.success ||
+            state == MicroButtonState.error)) {
+      _resetTimer = Timer(widget.autoResetDuration!, () {
+        if (mounted) widget.controller.setIdle();
+      });
+    }
+    _announce(state);
+    widget.onStateChanged?.call(state);
+  }
+
+  void _announce(MicroButtonState state) {
+    final String? message = switch (state) {
+      MicroButtonState.idle => null,
+      MicroButtonState.loading => 'Loading',
+      MicroButtonState.success => 'Success',
+      MicroButtonState.error => 'Error',
+    };
+    if (message == null) return;
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+    );
+  }
+
+  Widget _defaultLoading(BuildContext context) => SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.5,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).colorScheme.primary,
           ),
-        );
-      },
-      child: _buildStateWidget(),
+        ),
+      );
+
+  Widget _defaultSuccess(BuildContext context) =>
+      Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary);
+
+  Widget _defaultError(BuildContext context) =>
+      Icon(Icons.error, color: Theme.of(context).colorScheme.error);
+
+  Widget _currentContent(BuildContext context) {
+    return switch (widget.controller.state) {
+      MicroButtonState.idle => KeyedSubtree(
+          key: const ValueKey<MicroButtonState>(MicroButtonState.idle),
+          child: widget.child,
+        ),
+      MicroButtonState.loading => KeyedSubtree(
+          key: const ValueKey<MicroButtonState>(MicroButtonState.loading),
+          child: (widget.loadingBuilder ?? _defaultLoading)(context),
+        ),
+      MicroButtonState.success => KeyedSubtree(
+          key: const ValueKey<MicroButtonState>(MicroButtonState.success),
+          child: (widget.successBuilder ?? _defaultSuccess)(context),
+        ),
+      MicroButtonState.error => KeyedSubtree(
+          key: const ValueKey<MicroButtonState>(MicroButtonState.error),
+          child: (widget.errorBuilder ?? _defaultError)(context),
+        ),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MicroMotion.isReduced(context)) {
+      // Instant swap. AnimatedSize must not be given Duration.zero: it would
+      // notify listeners during its own layout and re-dirty itself.
+      return _currentContent(context);
+    }
+    return AnimatedSize(
+      duration: widget.duration,
+      curve: widget.curve,
+      child: AnimatedSwitcher(
+        duration: widget.duration,
+        switchInCurve: widget.curve,
+        switchOutCurve: widget.curve,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.9, end: 1.0).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: _currentContent(context),
+      ),
     );
   }
 }
-
-/// The possible states of a button.
-enum ButtonState {
-  /// The initial state of the button.
-  initial,
-
-  /// The loading state of the button.
-  loading,
-
-  /// The success state of the button.
-  success,
-
-  /// The error state of the button.
-  error,
-}
-
-typedef ButtonStatesController = GlobalKey<State<ButtonStates>>;

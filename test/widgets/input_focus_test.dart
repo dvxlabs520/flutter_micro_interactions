@@ -1,165 +1,110 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+Widget _wrap(Widget child) {
+  return MaterialApp(home: Scaffold(body: Center(child: child)));
+}
+
+/// The wrapping [Material] that InputFocus animates elevation on.
+Material _emphasisMaterial(WidgetTester tester) {
+  return tester.widget<Material>(
+    find
+        .descendant(of: find.byType(InputFocus), matching: find.byType(Material))
+        .first,
+  );
+}
 
 void main() {
   group('InputFocus', () {
-    testWidgets('animates on focus change', (WidgetTester tester) async {
+    testWidgets('renders its child at rest with zero elevation',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: InputFocus.animate(
-              child: const TextField(
-                decoration: InputDecoration(
-                  labelText: 'Test',
-                ),
-              ),
-            ),
-          ),
-        ),
+        _wrap(InputFocus(child: TextField())),
       );
-
-      final textField = find.byType(TextField);
-      expect(textField, findsOneWidget);
-
-      // Focus the text field
-      await tester.tap(textField);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(textField).width, greaterThan(0));
-
-      // Unfocus the text field
-      await tester.tap(find.byType(Scaffold));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(textField).width, greaterThan(0));
+      expect(find.byType(TextField), findsOneWidget);
+      expect(_emphasisMaterial(tester).elevation, 0.0);
     });
 
-    testWidgets('custom animation configuration works', (WidgetTester tester) async {
+    testWidgets('lifts on focus and settles back on unfocus',
+        (WidgetTester tester) async {
+      bool? focused;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: InputFocus.animate(
-              duration: const Duration(milliseconds: 200),
-              child: const TextField(
-                decoration: InputDecoration(
-                  labelText: 'Test',
-                ),
-              ),
-            ),
+        _wrap(
+          InputFocus(
+            elevation: 4.0,
+            onFocusChange: (bool value) => focused = value,
+            child: const TextField(),
           ),
         ),
       );
 
-      final textField = find.byType(TextField);
-      expect(textField, findsOneWidget);
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+      expect(focused, isTrue);
+      expect(_emphasisMaterial(tester).elevation, moreOrLessEquals(4.0));
 
-      // Focus the text field
-      await tester.tap(textField);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(tester.getSize(textField).width, greaterThan(0));
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(focused, isFalse);
+      expect(_emphasisMaterial(tester).elevation, moreOrLessEquals(0.0));
     });
 
-    testWidgets('works with different input types', (WidgetTester tester) async {
+    testWidgets('InputFocus.animate builds the same widget',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                InputFocus.animate(
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Text Input',
-                    ),
-                  ),
-                ),
-                InputFocus.animate(
-                  child: const TextField(
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email Input',
-                    ),
-                  ),
-                ),
-                InputFocus.animate(
-                  child: const TextField(
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password Input',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _wrap(InputFocus.animate(scale: 1.05, child: const TextField())),
       );
-
-      // Test each input type
-      for (final label in ['Text Input', 'Email Input', 'Password Input']) {
-        final textField = find.widgetWithText(TextField, label);
-        expect(textField, findsOneWidget);
-
-        // Focus the text field
-        await tester.tap(textField);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-        expect(tester.getSize(textField).width, greaterThan(0));
-
-        // Unfocus the text field
-        await tester.tap(find.byType(Scaffold));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-      }
+      expect(find.byType(InputFocus), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('handles multiple focus changes', (WidgetTester tester) async {
+    testWidgets('enabled false renders the child unchanged',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(InputFocus(enabled: false, child: const TextField())),
+      );
+      // The disabled wrapper builds the child directly, with no listening
+      // Focus/Material shell of its own.
+      Widget? built;
+      tester
+          .element(find.byType(InputFocus))
+          .visitChildren((Element child) => built ??= child.widget);
+      expect(built, isA<TextField>());
+    });
+
+    testWidgets('reduced motion applies the emphasis instantly',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                InputFocus.animate(
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'First Input',
-                    ),
-                  ),
-                ),
-                InputFocus.animate(
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Second Input',
-                    ),
-                  ),
-                ),
-              ],
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: Center(child: InputFocus(child: const TextField())),
             ),
           ),
         ),
       );
 
-      final firstInput = find.widgetWithText(TextField, 'First Input');
-      final secondInput = find.widgetWithText(TextField, 'Second Input');
-
-      // Focus first input
-      await tester.tap(firstInput);
+      await tester.tap(find.byType(TextField));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      // Focus second input
-      await tester.tap(secondInput);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      // The emphasis is at full strength immediately, without animating.
+      expect(_emphasisMaterial(tester).elevation, moreOrLessEquals(4.0));
+      await tester.pumpAndSettle();
+    });
 
-      // Unfocus
-      await tester.tap(find.byType(Scaffold));
+    testWidgets('disposal mid-animation does not throw',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(InputFocus(child: TextField())),
+      );
+      await tester.tap(find.byType(TextField));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.pumpWidget(Container());
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(tester.getSize(firstInput).width, greaterThan(0));
-      expect(tester.getSize(secondInput).width, greaterThan(0));
+      expect(tester.takeException(), isNull);
     });
   });
-} 
+}

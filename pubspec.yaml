@@ -1,14 +1,23 @@
 name: flutter_micro_interactions
-description: A collection of pre-built micro-interactions and animations for Flutter apps. Includes tap feedback, hover effects, button states, and input focus transitions.
-version: 0.0.2
+description: >-
+  Pre-built micro-interactions and animations for Flutter: tap feedback, toasts,
+  shimmer buttons, slide-to-confirm, staggered lists, typewriter text, and more.
+version: 0.2.0
 homepage: https://github.com/dvillegastech/flutter_micro_interactions
 repository: https://github.com/dvillegastech/flutter_micro_interactions
 issue_tracker: https://github.com/dvillegastech/flutter_micro_interactions/issues
 documentation: https://github.com/dvillegastech/flutter_micro_interactions#readme
 
+topics:
+  - animation
+  - ui
+  - widgets
+  - micro-interactions
+  - flutter
+
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: ">=3.0.0"
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: ">=3.38.0"
 
 dependencies:
   flutter:
@@ -18,7 +27,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  build_runner: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

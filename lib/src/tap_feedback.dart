@@ -1,68 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// A widget that provides intuitive tap feedback animations.
-/// 
-/// TapFeedback wraps any widget and provides visual feedback when tapped.
-/// It offers several animation types that feel natural and responsive.
-/// 
-/// Example usage:
+import 'utils/motion.dart';
+
+/// The visual effect played by [TapFeedback] when the child is pressed.
+enum TapAnimationType {
+  /// Scale down while pressed, scale back on release.
+  scale,
+
+  /// Scale down while pressed, overshoot slightly on release before
+  /// settling back to the resting size.
+  bounce,
+
+  /// Fade to a lower opacity while pressed.
+  fade,
+
+  /// Scale down and fade at the same time while pressed.
+  scaleAndFade,
+}
+
+/// Wraps any widget and plays a short visual feedback animation on tap.
+///
+/// The effect is chosen with [effect] (see [TapAnimationType]). The widget
+/// is exposed to assistive technology as a button and can be activated with
+/// the keyboard (Enter or Space) when focused.
+///
+/// [onTap] fires immediately on tap-up; it never waits for animations.
+///
+/// The gesture detector uses [HitTestBehavior.opaque] so the whole child
+/// area is tappable, including transparent regions. Interactive children
+/// (for example an [ElevatedButton]) still receive their own tap events
+/// because they sit deeper in the hit-test order; in that case prefer
+/// leaving [onTap] null here and keeping the child's own callback.
+///
+/// When the platform requests reduced motion no animation is played, but
+/// taps, haptics and callbacks still work.
+///
+/// Example:
 /// ```dart
 /// TapFeedback.scale(
-///   child: ElevatedButton(
-///     onPressed: () => print('Tapped!'),
+///   onTap: () => debugPrint('Tapped!'),
+///   child: const Card(child: Padding(
+///     padding: EdgeInsets.all(16),
 ///     child: Text('Tap me'),
-///   ),
+///   )),
 /// )
 /// ```
 class TapFeedback extends StatefulWidget {
-  /// Creates a tap feedback widget with custom configuration.
+  /// Creates a tap feedback widget.
   const TapFeedback({
     super.key,
     required this.child,
     this.onTap,
+    this.effect = TapAnimationType.scale,
     this.scaleDown = 0.95,
     this.scaleUp = 1.05,
+    this.opacity = 0.8,
     this.duration = const Duration(milliseconds: 150),
     this.curve = Curves.easeInOut,
-    this.opacity = 0.8,
-    this.enableScale = true,
-    this.enableOpacity = false,
     this.enableHaptics = true,
-  });
+    this.enabled = true,
+    this.semanticLabel,
+  })  : assert(scaleDown > 0 && scaleDown <= 1.0,
+            'scaleDown must be in (0, 1]'),
+        assert(scaleUp >= 1.0, 'scaleUp must be >= 1.0'),
+        assert(opacity >= 0 && opacity <= 1.0, 'opacity must be in [0, 1]');
 
-  /// The child widget to animate.
+  /// The widget below this widget in the tree.
   final Widget child;
 
-  /// Callback when the widget is tapped.
+  /// Called immediately when a tap completes (on tap-up) or when the
+  /// widget is activated with the keyboard.
   final VoidCallback? onTap;
 
-  /// Scale factor when pressed down (should be < 1.0).
+  /// Which feedback animation to play.
+  final TapAnimationType effect;
+
+  /// Scale factor while pressed. Must be in `(0, 1]`.
+  ///
+  /// Used by [TapAnimationType.scale], [TapAnimationType.bounce] and
+  /// [TapAnimationType.scaleAndFade].
   final double scaleDown;
 
-  /// Scale factor for bounce effect (should be > 1.0).
+  /// Overshoot scale factor for [TapAnimationType.bounce]. Must be `>= 1.0`.
   final double scaleUp;
 
-  /// Duration of the animation.
-  final Duration duration;
-
-  /// Animation curve.
-  final Curve curve;
-
-  /// Opacity when pressed (if enableOpacity is true).
+  /// Opacity while pressed, in `[0, 1]`.
+  ///
+  /// Used by [TapAnimationType.fade] and [TapAnimationType.scaleAndFade].
   final double opacity;
 
-  /// Whether to enable scale animation.
-  final bool enableScale;
+  /// Length of the press animation. Defaults to 150 milliseconds.
+  final Duration duration;
 
-  /// Whether to enable opacity animation.
-  final bool enableOpacity;
+  /// Curve applied to the press animation. Defaults to [Curves.easeInOut].
+  ///
+  /// The bounce release always uses an ease-out sequence regardless of
+  /// this value.
+  final Curve curve;
 
-  /// Whether to enable haptic feedback.
+  /// Whether a light haptic impact is triggered on press.
   final bool enableHaptics;
 
-  /// Creates a scale-down feedback (most common and intuitive).
-  /// The widget scales down when pressed, giving immediate visual feedback.
+  /// Whether the feedback is active.
+  ///
+  /// When false the child is rendered unchanged and no gestures, haptics
+  /// or callbacks fire.
+  final bool enabled;
+
+  /// Optional semantic label announced for the button.
+  final String? semanticLabel;
+
+  /// A plain scale-down feedback, the most common press effect.
   static Widget scale({
     Key? key,
     required Widget child,
@@ -71,6 +120,7 @@ class TapFeedback extends StatefulWidget {
     Duration duration = const Duration(milliseconds: 150),
     Curve curve = Curves.easeInOut,
     bool enableHaptics = true,
+    bool enabled = true,
   }) {
     return TapFeedback(
       key: key,
@@ -78,15 +128,13 @@ class TapFeedback extends StatefulWidget {
       scaleDown: scale,
       duration: duration,
       curve: curve,
-      enableScale: true,
-      enableOpacity: false,
       enableHaptics: enableHaptics,
+      enabled: enabled,
       child: child,
     );
   }
 
-  /// Creates a bounce feedback with scale and slight overshoot.
-  /// The widget scales down then slightly up, creating a bouncy feel.
+  /// A scale feedback that overshoots slightly on release for a bouncy feel.
   static Widget bounce({
     Key? key,
     required Widget child,
@@ -94,47 +142,49 @@ class TapFeedback extends StatefulWidget {
     double scaleDown = 0.95,
     double scaleUp = 1.02,
     Duration duration = const Duration(milliseconds: 200),
+    Curve curve = Curves.easeInOut,
     bool enableHaptics = true,
+    bool enabled = true,
   }) {
     return TapFeedback(
       key: key,
       onTap: onTap,
+      effect: TapAnimationType.bounce,
       scaleDown: scaleDown,
       scaleUp: scaleUp,
       duration: duration,
-      curve: Curves.elasticOut,
-      enableScale: true,
-      enableOpacity: false,
+      curve: curve,
       enableHaptics: enableHaptics,
+      enabled: enabled,
       child: child,
     );
   }
 
-  /// Creates an opacity feedback.
-  /// The widget becomes semi-transparent when pressed.
+  /// An opacity-only feedback; the child dims while pressed.
   static Widget fade({
     Key? key,
     required Widget child,
     VoidCallback? onTap,
     double opacity = 0.7,
     Duration duration = const Duration(milliseconds: 150),
+    Curve curve = Curves.easeInOut,
     bool enableHaptics = true,
+    bool enabled = true,
   }) {
     return TapFeedback(
       key: key,
       onTap: onTap,
+      effect: TapAnimationType.fade,
       opacity: opacity,
       duration: duration,
-      curve: Curves.easeInOut,
-      enableScale: false,
-      enableOpacity: true,
+      curve: curve,
       enableHaptics: enableHaptics,
+      enabled: enabled,
       child: child,
     );
   }
 
-  /// Creates a combined scale and opacity feedback.
-  /// The widget scales down and becomes semi-transparent when pressed.
+  /// A combined scale and opacity feedback.
   static Widget scaleAndOpacity({
     Key? key,
     required Widget child,
@@ -142,18 +192,20 @@ class TapFeedback extends StatefulWidget {
     double scale = 0.95,
     double opacity = 0.8,
     Duration duration = const Duration(milliseconds: 150),
+    Curve curve = Curves.easeInOut,
     bool enableHaptics = true,
+    bool enabled = true,
   }) {
     return TapFeedback(
       key: key,
       onTap: onTap,
+      effect: TapAnimationType.scaleAndFade,
       scaleDown: scale,
       opacity: opacity,
       duration: duration,
-      curve: Curves.easeInOut,
-      enableScale: true,
-      enableOpacity: true,
+      curve: curve,
       enableHaptics: enableHaptics,
+      enabled: enabled,
       child: child,
     );
   }
@@ -163,185 +215,195 @@ class TapFeedback extends StatefulWidget {
 }
 
 class _TapFeedbackState extends State<TapFeedback>
-    with TickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late AnimationController _opacityController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
-  
-  bool _isPressed = false;
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final ProxyAnimation _scale;
+  late final ProxyAnimation _opacity;
+
+  /// Cached reduce-motion flag, updated in [didChangeDependencies] so that
+  /// gesture callbacks arriving during tree teardown (for example a tap
+  /// cancel while the widget is being removed) never look up an inherited
+  /// widget on a deactivated element.
+  bool _reducedMotion = false;
+
+  bool get _usesScale =>
+      widget.effect == TapAnimationType.scale ||
+      widget.effect == TapAnimationType.bounce ||
+      widget.effect == TapAnimationType.scaleAndFade;
+
+  bool get _usesOpacity =>
+      widget.effect == TapAnimationType.fade ||
+      widget.effect == TapAnimationType.scaleAndFade;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize scale controller and animation
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.scaleDown,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: widget.curve,
-    ));
-    
-    // Initialize opacity controller and animation
-    _opacityController = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    
-    _opacityAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.opacity,
-    ).animate(CurvedAnimation(
-      parent: _opacityController,
-      curve: widget.curve,
-    ));
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _scale = ProxyAnimation(const AlwaysStoppedAnimation<double>(1.0));
+    _opacity = ProxyAnimation(const AlwaysStoppedAnimation<double>(1.0));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reducedMotion = MicroMotion.isReduced(context);
+  }
+
+  @override
+  void didUpdateWidget(TapFeedback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+    }
+    if (!widget.enabled && oldWidget.enabled) {
+      _controller.stop();
+      _scale.parent = const AlwaysStoppedAnimation<double>(1.0);
+      _opacity.parent = const AlwaysStoppedAnimation<double>(1.0);
+    }
   }
 
   @override
   void dispose() {
-    _scaleController.dispose();
-    _opacityController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _handleTapDown(TapDownDetails details) async {
-    if (_isPressed) return;
-    _isPressed = true;
-    
-    // Trigger haptic feedback if enabled
+  Animatable<double> _pressScaleTween() =>
+      Tween<double>(begin: 1.0, end: widget.scaleDown)
+          .chain(CurveTween(curve: widget.curve));
+
+  Animatable<double> _pressOpacityTween() =>
+      Tween<double>(begin: 1.0, end: widget.opacity)
+          .chain(CurveTween(curve: widget.curve));
+
+  void _handleTapDown(TapDownDetails details) {
+    if (!widget.enabled) return;
     if (widget.enableHaptics) {
-      try {
-        await HapticFeedback.lightImpact();
-      } catch (e) {
-        // Haptic feedback might not be available on all platforms
-      }
+      HapticFeedback.lightImpact();
     }
-    
-    // Start animations
-    if (widget.enableScale) {
-      _scaleController.forward();
+    if (MicroMotion.isReduced(context)) return;
+    if (_usesScale) {
+      _scale.parent = _controller.drive(_pressScaleTween());
     }
-    if (widget.enableOpacity) {
-      _opacityController.forward();
+    if (_usesOpacity) {
+      _opacity.parent = _controller.drive(_pressOpacityTween());
     }
+    _controller.forward(from: 0.0);
   }
 
-  Future<void> _handleTapUp(TapUpDetails details) async {
-    await _resetAnimations();
-    
-    // Call the onTap callback if provided
-    if (widget.onTap != null) {
-      widget.onTap!();
-    }
-  }
-
-  Future<void> _handleTapCancel() async {
-    await _resetAnimations();
-  }
-
-  Future<void> _resetAnimations() async {
-    if (!_isPressed) return;
-    _isPressed = false;
-    
-    // For bounce effect, first go to scaleUp, then back to 1.0
-    if (widget.enableScale && widget.curve == Curves.elasticOut) {
-      // Create a temporary animation for the bounce effect
-      final bounceController = AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: widget.duration.inMilliseconds ~/ 2),
+  void _release() {
+    if (!mounted || _reducedMotion) return;
+    if (widget.effect == TapAnimationType.bounce) {
+      // Play the bounce sequence forward from the pressed scale.
+      _scale.parent = _controller.drive(
+        TweenSequence<double>(<TweenSequenceItem<double>>[
+          TweenSequenceItem<double>(
+            tween: Tween<double>(begin: widget.scaleDown, end: widget.scaleUp)
+                .chain(CurveTween(curve: Curves.easeOut)),
+            weight: 55,
+          ),
+          TweenSequenceItem<double>(
+            tween: Tween<double>(begin: widget.scaleUp, end: 1.0)
+                .chain(CurveTween(curve: Curves.easeIn)),
+            weight: 45,
+          ),
+        ]),
       );
-      
-      final bounceAnimation = Tween<double>(
-        begin: widget.scaleDown,
-        end: widget.scaleUp,
-      ).animate(CurvedAnimation(
-        parent: bounceController,
-        curve: Curves.easeOut,
-      ));
-      
-      // Update the scale animation to use the bounce animation
-      bounceController.addListener(() {
-        if (mounted) {
-          setState(() {
-            _scaleAnimation = AlwaysStoppedAnimation(bounceAnimation.value);
-          });
-        }
-      });
-      
-      await bounceController.forward();
-      bounceController.dispose();
-      
-      // Then animate back to normal
-      await _scaleController.reverse();
+      _controller.forward(from: 0.0);
     } else {
-      // Normal reverse animation
-      if (widget.enableScale) {
-        _scaleController.reverse();
-      }
+      _controller.reverse();
     }
-    
-    if (widget.enableOpacity) {
-      _opacityController.reverse();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (!widget.enabled) return;
+    // Fire immediately; never wait for animations.
+    widget.onTap?.call();
+    _release();
+  }
+
+  void _handleTapCancel() {
+    if (!widget.enabled) return;
+    _release();
+  }
+
+  void _activateFromKeyboard() {
+    if (!widget.enabled) return;
+    if (widget.enableHaptics) {
+      HapticFeedback.lightImpact();
+    }
+    widget.onTap?.call();
+    if (MicroMotion.isReduced(context)) return;
+    // Play a quick press-and-release so keyboard users get feedback too.
+    if (_usesScale && widget.effect != TapAnimationType.bounce) {
+      _scale.parent = _controller.drive(_pressScaleTween());
+    }
+    if (_usesOpacity) {
+      _opacity.parent = _controller.drive(_pressOpacityTween());
+    }
+    if (widget.effect == TapAnimationType.bounce) {
+      _scale.parent = _controller.drive(
+        TweenSequence<double>(<TweenSequenceItem<double>>[
+          TweenSequenceItem<double>(
+            tween: Tween<double>(begin: 1.0, end: widget.scaleDown)
+                .chain(CurveTween(curve: Curves.easeOut)),
+            weight: 30,
+          ),
+          TweenSequenceItem<double>(
+            tween: Tween<double>(begin: widget.scaleDown, end: widget.scaleUp)
+                .chain(CurveTween(curve: Curves.easeOut)),
+            weight: 40,
+          ),
+          TweenSequenceItem<double>(
+            tween: Tween<double>(begin: widget.scaleUp, end: 1.0)
+                .chain(CurveTween(curve: Curves.easeIn)),
+            weight: 30,
+          ),
+        ]),
+      );
+      _controller.forward(from: 0.0);
+    } else {
+      _controller.forward(from: 0.0).then((_) {
+        if (mounted) _controller.reverse();
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     Widget child = widget.child;
-    
-    // Apply scale animation if enabled
-    if (widget.enableScale) {
-      child = AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
-        },
-        child: child,
-      );
+
+    if (_usesScale) {
+      child = ScaleTransition(scale: _scale, child: child);
     }
-    
-    // Apply opacity animation if enabled
-    if (widget.enableOpacity) {
-      child = AnimatedBuilder(
-        animation: _opacityAnimation,
-        builder: (context, child) {
-          return Opacity(
-            opacity: _opacityAnimation.value.clamp(0.0, 1.0),
-            child: child,
-          );
-        },
-        child: child,
-      );
+    if (_usesOpacity) {
+      child = FadeTransition(opacity: _opacity, child: child);
     }
-    
-    return GestureDetector(
-      onTapDown: _handleTapDown,
-      onTapUp: _handleTapUp,
-      onTapCancel: _handleTapCancel,
-      behavior: HitTestBehavior.opaque,
-      child: child,
+
+    if (!widget.enabled) {
+      return child;
+    }
+
+    return Semantics(
+      button: true,
+      label: widget.semanticLabel,
+      child: FocusableActionDetector(
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              _activateFromKeyboard();
+              return null;
+            },
+          ),
+        },
+        child: GestureDetector(
+          onTapDown: _handleTapDown,
+          onTapUp: _handleTapUp,
+          onTapCancel: _handleTapCancel,
+          behavior: HitTestBehavior.opaque,
+          child: child,
+        ),
+      ),
     );
   }
-}
-
-/// The type of tap animation to use.
-enum TapAnimationType {
-  /// A pulse animation that scales up and down.
-  pulse,
-
-  /// A bounce animation that scales up with an elastic effect.
-  bounce,
-
-  /// A shrink animation that scales down when pressed.
-  shrink,
 }

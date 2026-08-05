@@ -1,177 +1,96 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
-/// Types of page transitions.
-enum PageTransitionType {
-  /// Fade transition.
+import 'utils/motion.dart';
+
+/// The transition styles supported by [MicroPageRoute].
+enum MicroTransitionType {
+  /// Fades the new page in.
   fade,
-  
-  /// Slide transition from right.
+
+  /// Slides the new page in from the trailing (right) edge.
   slideRight,
-  
-  /// Slide transition from left.
+
+  /// Slides the new page in from the leading (left) edge.
   slideLeft,
-  
-  /// Slide transition from top.
+
+  /// Slides the new page in from the top edge.
   slideTop,
-  
-  /// Slide transition from bottom.
+
+  /// Slides the new page in from the bottom edge.
   slideBottom,
-  
-  /// Scale transition.
+
+  /// Scales the new page up from a point.
   scale,
-  
-  /// Rotate transition.
+
+  /// Rotates the new page in while fading.
   rotate,
-  
-  /// Size transition.
+
+  /// Grows the new page from zero height.
   size,
-  
-  /// Flip transition.
+
+  /// Flips the new page in with a 3D rotation around the vertical axis.
   flip,
-  
-  /// Blur transition.
+
+  /// Sharpens the new page from a blurred state while fading it in.
   blur,
 }
 
-/// A page route that provides custom transitions.
-class PageTransition<T> extends PageRoute<T> {
-  /// Creates a page transition.
-  PageTransition({
+/// A [PageRoute] with a configurable micro transition.
+///
+/// ```dart
+/// Navigator.of(context).push(
+///   MicroPageRoute(
+///     child: const DetailPage(),
+///     type: MicroTransitionType.fade,
+///   ),
+/// );
+/// ```
+///
+/// The [curve] applies to every transition type. Transition types that can
+/// reveal the previous page during the animation (fade, scale, rotate, flip,
+/// blur) report [opaque] as `false` so the outgoing page stays visible
+/// behind them.
+///
+/// Under reduced motion every transition falls back to a plain fade.
+class MicroPageRoute<T> extends PageRoute<T> {
+  /// Creates a page route with a micro transition.
+  MicroPageRoute({
     required this.child,
-    required this.type,
+    this.type = MicroTransitionType.fade,
     this.duration = const Duration(milliseconds: 300),
     this.reverseDuration = const Duration(milliseconds: 300),
     this.alignment,
     this.curve = Curves.easeInOut,
-    super.fullscreenDialog,
     this.maintainState = true,
-  }) : _fullscreenDialog = fullscreenDialog;
+    super.fullscreenDialog,
+    super.settings,
+  })  : assert(duration >= Duration.zero, 'duration must not be negative'),
+        assert(reverseDuration >= Duration.zero,
+            'reverseDuration must not be negative');
 
-  @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-    return child;
-  }
-
-  @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
-    switch (type) {
-      case PageTransitionType.fade:
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
-      
-      case PageTransitionType.slideRight:
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
-        );
-      
-      case PageTransitionType.slideLeft:
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(-1, 0),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
-        );
-      
-      case PageTransitionType.slideTop:
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, -1),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
-        );
-      
-      case PageTransitionType.slideBottom:
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
-        );
-      
-      case PageTransitionType.scale:
-        return ScaleTransition(
-          scale: animation,
-          alignment: alignment ?? Alignment.center,
-          child: child,
-        );
-      
-      case PageTransitionType.rotate:
-        return RotationTransition(
-          turns: animation,
-          alignment: alignment ?? Alignment.center,
-          child: child,
-        );
-      
-      case PageTransitionType.size:
-        return Align(
-          alignment: alignment ?? Alignment.center,
-          child: SizeTransition(
-            sizeFactor: animation,
-            child: child,
-          ),
-        );
-      
-      case PageTransitionType.flip:
-        return RotationTransition(
-          turns: Tween<double>(
-            begin: 0.0,
-            end: 1.0,
-          ).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: curve,
-            ),
-          ),
-          child: ScaleTransition(
-            scale: animation,
-            child: child,
-          ),
-        );
-      
-      case PageTransitionType.blur:
-        // Note: Blur transition requires a shader mask which is not
-        // implemented here for simplicity. In a real implementation,
-        // you would use a BackdropFilter with an ImageFilter.blur.
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
-    }
-  }
-
-  /// The child widget to display.
+  /// The page to show.
   final Widget child;
 
-  /// The type of transition to use.
-  final PageTransitionType type;
+  /// The transition style. Defaults to [MicroTransitionType.fade].
+  final MicroTransitionType type;
 
-  /// Duration of the transition.
+  /// Duration of the forward transition. Defaults to 300 milliseconds.
   final Duration duration;
 
-  /// Duration of the reverse transition.
+  /// Duration of the reverse transition. Defaults to 300 milliseconds.
   final Duration reverseDuration;
 
-  /// Alignment for scale and rotate transitions.
+  /// Alignment for scale, rotate and size transitions.
+  /// Defaults to [Alignment.center].
   final Alignment? alignment;
 
-  /// Animation curve.
+  /// Curve applied to every transition type.
+  /// Defaults to [Curves.easeInOut].
   final Curve curve;
 
-  /// Whether this is a fullscreen dialog.
-  final bool _fullscreenDialog;
-  @override
-  bool get fullscreenDialog => _fullscreenDialog;
-
-  /// Whether to maintain the state of the page when it's not visible.
   @override
   final bool maintainState;
 
@@ -186,188 +105,235 @@ class PageTransition<T> extends PageRoute<T> {
 
   @override
   String? get barrierLabel => null;
-}
-
-/// A widget that provides a custom transition when navigating to a new page.
-class TransitionRoute extends StatelessWidget {
-  /// Creates a transition route widget.
-  const TransitionRoute({
-    super.key,
-    required this.builder,
-    required this.transitionType,
-    this.duration = const Duration(milliseconds: 300),
-    this.curve = Curves.easeInOut,
-  });
-
-  /// Builder function for the page content.
-  final WidgetBuilder builder;
-
-  /// The type of transition to use.
-  final PageTransitionType transitionType;
-
-  /// Duration of the transition.
-  final Duration duration;
-
-  /// Animation curve.
-  final Curve curve;
 
   @override
-  Widget build(BuildContext context) {
-    return builder(context);
+  bool get opaque {
+    switch (type) {
+      case MicroTransitionType.fade:
+      case MicroTransitionType.scale:
+      case MicroTransitionType.rotate:
+      case MicroTransitionType.flip:
+      case MicroTransitionType.blur:
+        return false;
+      case MicroTransitionType.slideRight:
+      case MicroTransitionType.slideLeft:
+      case MicroTransitionType.slideTop:
+      case MicroTransitionType.slideBottom:
+      case MicroTransitionType.size:
+        return true;
+    }
   }
 
-  /// Navigate to this route.
-  Future<T?> push<T>(BuildContext context) {
+  // Tweens are static so buildTransitions does not allocate them per frame.
+  static final Tween<Offset> _slideRightTween =
+      Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero);
+  static final Tween<Offset> _slideLeftTween =
+      Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero);
+  static final Tween<Offset> _slideTopTween =
+      Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero);
+  static final Tween<Offset> _slideBottomTween =
+      Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
+  static final Tween<double> _quarterTurnTween =
+      Tween<double>(begin: -0.25, end: 0.0);
+
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation) {
+    return child;
+  }
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    if (MicroMotion.isReduced(context)) {
+      // Reduced motion: a plain fade for every transition type.
+      return FadeTransition(opacity: animation, child: child);
+    }
+
+    final Animation<double> curved =
+        CurvedAnimation(parent: animation, curve: curve);
+
+    switch (type) {
+      case MicroTransitionType.fade:
+        return FadeTransition(opacity: curved, child: child);
+      case MicroTransitionType.slideRight:
+        return SlideTransition(
+          position: _slideRightTween.animate(curved),
+          child: child,
+        );
+      case MicroTransitionType.slideLeft:
+        return SlideTransition(
+          position: _slideLeftTween.animate(curved),
+          child: child,
+        );
+      case MicroTransitionType.slideTop:
+        return SlideTransition(
+          position: _slideTopTween.animate(curved),
+          child: child,
+        );
+      case MicroTransitionType.slideBottom:
+        return SlideTransition(
+          position: _slideBottomTween.animate(curved),
+          child: child,
+        );
+      case MicroTransitionType.scale:
+        return ScaleTransition(
+          scale: curved,
+          alignment: alignment ?? Alignment.center,
+          child: child,
+        );
+      case MicroTransitionType.rotate:
+        return FadeTransition(
+          opacity: curved,
+          child: RotationTransition(
+            turns: _quarterTurnTween.animate(curved),
+            alignment: alignment ?? Alignment.center,
+            child: child,
+          ),
+        );
+      case MicroTransitionType.size:
+        return Align(
+          alignment: alignment ?? Alignment.center,
+          child: SizeTransition(sizeFactor: curved, child: child),
+        );
+      case MicroTransitionType.flip:
+        return AnimatedBuilder(
+          animation: curved,
+          child: child,
+          builder: (context, child) {
+            final double t = curved.value;
+            if (t < 0.5) {
+              // First half: the incoming page is still facing away.
+              return const SizedBox.shrink();
+            }
+            // Second half: rotate from 90 degrees to 0 with perspective.
+            final double angle = (1.0 - (t - 0.5) * 2.0) * (math.pi / 2);
+            final Matrix4 transform = Matrix4.identity()
+              ..setEntry(3, 2, 0.001)
+              ..rotateY(angle);
+            return Transform(
+              transform: transform,
+              alignment: alignment ?? Alignment.center,
+              child: child,
+            );
+          },
+        );
+      case MicroTransitionType.blur:
+        return FadeTransition(
+          opacity: curved,
+          child: AnimatedBuilder(
+            animation: curved,
+            child: child,
+            builder: (context, child) {
+              final double sigma = (1.0 - curved.value) * 8.0;
+              if (sigma <= 0.01) {
+                return child!;
+              }
+              return ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(
+                  sigmaX: sigma,
+                  sigmaY: sigma,
+                  tileMode: ui.TileMode.decal,
+                ),
+                child: child,
+              );
+            },
+          ),
+        );
+    }
+  }
+}
+
+/// Static navigation helpers that push pages with a [MicroPageRoute].
+///
+/// ```dart
+/// MicroNavigator.push(
+///   context,
+///   const DetailPage(),
+///   type: MicroTransitionType.slideRight,
+/// );
+/// ```
+abstract final class MicroNavigator {
+  /// Pushes [page] with a [MicroPageRoute] of the given [type].
+  static Future<T?> push<T extends Object?>(
+    BuildContext context,
+    Widget page, {
+    MicroTransitionType type = MicroTransitionType.fade,
+    Duration duration = const Duration(milliseconds: 300),
+    Duration reverseDuration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeInOut,
+    Alignment? alignment,
+    bool fullscreenDialog = false,
+    bool maintainState = true,
+  }) {
     return Navigator.of(context).push<T>(
-      PageTransition(
-        type: transitionType,
+      MicroPageRoute<T>(
+        child: page,
+        type: type,
         duration: duration,
+        reverseDuration: reverseDuration,
         curve: curve,
-        child: this,
+        alignment: alignment,
+        fullscreenDialog: fullscreenDialog,
+        maintainState: maintainState,
       ),
     );
   }
 
-  /// Replace the current route with this route.
-  Future<T?> pushReplacement<T, TO>(BuildContext context, {TO? result}) {
+  /// Replaces the current route with [page] using a [MicroPageRoute].
+  static Future<T?> pushReplacement<T extends Object?, TO extends Object?>(
+    BuildContext context,
+    Widget page, {
+    MicroTransitionType type = MicroTransitionType.fade,
+    Duration duration = const Duration(milliseconds: 300),
+    Duration reverseDuration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeInOut,
+    Alignment? alignment,
+    bool fullscreenDialog = false,
+    bool maintainState = true,
+    TO? result,
+  }) {
     return Navigator.of(context).pushReplacement<T, TO>(
-      PageTransition(
-        type: transitionType,
+      MicroPageRoute<T>(
+        child: page,
+        type: type,
         duration: duration,
+        reverseDuration: reverseDuration,
         curve: curve,
-        child: this,
+        alignment: alignment,
+        fullscreenDialog: fullscreenDialog,
+        maintainState: maintainState,
       ),
       result: result,
     );
   }
 
-  /// Push this route and remove all previous routes.
-  Future<T?> pushAndRemoveUntil<T>(BuildContext context, RoutePredicate predicate) {
+  /// Pushes [page] with a [MicroPageRoute] and removes previous routes until
+  /// [predicate] returns `true`.
+  static Future<T?> pushAndRemoveUntil<T extends Object?>(
+    BuildContext context,
+    Widget page,
+    RoutePredicate predicate, {
+    MicroTransitionType type = MicroTransitionType.fade,
+    Duration duration = const Duration(milliseconds: 300),
+    Duration reverseDuration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeInOut,
+    Alignment? alignment,
+    bool fullscreenDialog = false,
+    bool maintainState = true,
+  }) {
     return Navigator.of(context).pushAndRemoveUntil<T>(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => this,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: curve,
-          );
-          switch (transitionType) {
-            case PageTransitionType.fade:
-              return FadeTransition(opacity: curvedAnimation, child: child);
-            case PageTransitionType.slideRight:
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curvedAnimation),
-                child: child,
-              );
-            // Add other transition cases as needed
-            default:
-              return child;
-          }
-        },
-        transitionDuration: duration,
+      MicroPageRoute<T>(
+        child: page,
+        type: type,
+        duration: duration,
+        reverseDuration: reverseDuration,
+        curve: curve,
+        alignment: alignment,
+        fullscreenDialog: fullscreenDialog,
+        maintainState: maintainState,
       ),
       predicate,
-    );
-  }
-}
-
-/// A widget that provides a hero animation between pages.
-class HeroTransition extends StatelessWidget {
-  /// Creates a hero transition widget.
-  const HeroTransition({
-    super.key,
-    required this.tag,
-    required this.child,
-    this.placeholderBuilder,
-    this.flightShuttleBuilder,
-    this.createRectTween,
-  });
-
-  /// The hero tag.
-  final String tag;
-
-  /// The child widget.
-  final Widget child;
-
-  /// Builder for the placeholder widget.
-  final Widget Function(BuildContext, Size, Widget)? placeholderBuilder;
-
-  /// Builder for the flight shuttle widget.
-  final Widget Function(BuildContext, Animation<double>, HeroFlightDirection, BuildContext, BuildContext)? flightShuttleBuilder;
-
-  /// Function to create a rect tween.
-  final Tween<Rect?> Function(Rect?, Rect?)? createRectTween;
-
-  @override
-  Widget build(BuildContext context) {
-    return Hero(
-      tag: tag,
-      placeholderBuilder: placeholderBuilder,
-      flightShuttleBuilder: flightShuttleBuilder,
-      createRectTween: createRectTween,
-      child: child,
-    );
-  }
-}
-
-/// A widget that provides a shared axis transition.
-class SharedAxisTransition extends StatelessWidget {
-  /// Creates a shared axis transition widget.
-  const SharedAxisTransition({
-    super.key,
-    required this.animation,
-    required this.secondaryAnimation,
-    required this.child,
-    this.axis = Axis.horizontal,
-  });
-
-  /// The animation controller.
-  final Animation<double> animation;
-
-  /// The secondary animation controller.
-  final Animation<double> secondaryAnimation;
-
-  /// The child widget.
-  final Widget child;
-
-  /// The axis of the transition.
-  final Axis axis;
-
-  @override
-  Widget build(BuildContext context) {
-    final fadeAnimation = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeInOut,
-    );
-
-    Animation<Offset> slideAnimation;
-    if (axis == Axis.horizontal) {
-      slideAnimation = Tween<Offset>(
-        begin: const Offset(1.0, 0.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeInOut,
-      ));
-    } else {
-      slideAnimation = Tween<Offset>(
-        begin: const Offset(0.0, 1.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeInOut,
-      ));
-    }
-
-    return FadeTransition(
-      opacity: fadeAnimation,
-      child: SlideTransition(
-        position: slideAnimation,
-        child: child,
-      ),
     );
   }
 }

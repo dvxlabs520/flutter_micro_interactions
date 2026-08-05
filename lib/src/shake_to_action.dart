@@ -1,33 +1,110 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
-/// A widget that detects shake gestures and triggers actions.
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'utils/motion.dart';
+
+/// Programmatic trigger for [ShakeToAction] and [ShakeAnimation].
+///
+/// ```dart
+/// final controller = ShakeController();
+/// // ...
+/// ShakeAnimation(controller: controller, child: myWidget);
+/// // later:
+/// controller.shake();
+/// ```
+///
+/// Calling [shake] plays the shake animation on every attached widget. On a
+/// [ShakeToAction] it also fires `onShake`, exactly as if the user had
+/// performed the shake gesture. Dispose the controller yourself when it is
+/// no longer needed.
+class ShakeController extends ChangeNotifier {
+  /// Triggers the shake animation on attached widgets.
+  void shake() {
+    notifyListeners();
+  }
+}
+
+/// Detects a vigorous back-and-forth drag ("shake" gesture) on its child and
+/// runs [onShake] with a shake animation.
+///
+/// This widget is gesture based, not accelerometer based: it does not read
+/// device motion sensors and does not react to physically shaking the
+/// device. It detects a rapid horizontal back-and-forth drag on the child:
+/// the pointer must reverse horizontal direction at least
+/// [requiredReversals] times within [detectionWindow], each reversal moving
+/// faster than [velocityThreshold] logical pixels per second. A plain drag
+/// in one direction never triggers it.
+///
+/// ```dart
+/// ShakeToAction(
+///   onShake: () => undoLastAction(),
+///   child: const NoteCard(),
+/// )
+/// ```
+///
+/// [onShake] can also be fired programmatically through [controller].
+///
+/// Under reduced motion the translation animation is skipped but callbacks
+/// and haptics still fire.
 class ShakeToAction extends StatefulWidget {
   /// Creates a shake to action widget.
   const ShakeToAction({
     super.key,
     required this.child,
     required this.onShake,
-    this.shakeThreshold = 2.5,
-    this.shakeDuration = const Duration(milliseconds: 500),
+    this.controller,
+    this.requiredReversals = 3,
+    this.detectionWindow = const Duration(milliseconds: 600),
+    this.velocityThreshold = 600.0,
+    this.cooldown = const Duration(milliseconds: 500),
+    this.duration = const Duration(milliseconds: 400),
+    this.intensity = 8.0,
     this.enableHaptics = true,
-  });
+    this.enabled = true,
+  })  : assert(requiredReversals > 0, 'requiredReversals must be positive'),
+        assert(velocityThreshold > 0, 'velocityThreshold must be positive'),
+        assert(intensity >= 0, 'intensity must not be negative');
 
-  /// The child widget.
+  /// The widget the gesture is detected on.
   final Widget child;
 
-  /// Callback when shake is detected.
+  /// Called when a shake gesture is detected (or [controller] fires).
   final VoidCallback onShake;
 
-  /// Threshold for shake detection.
-  final double shakeThreshold;
+  /// Optional controller to trigger the shake programmatically.
+  final ShakeController? controller;
 
-  /// Duration to wait between shake detections.
-  final Duration shakeDuration;
+  /// Number of horizontal direction reversals needed within
+  /// [detectionWindow]. Defaults to 3.
+  final int requiredReversals;
 
-  /// Whether to enable haptic feedback.
+  /// Time window in which the reversals must happen.
+  /// Defaults to 600 milliseconds.
+  final Duration detectionWindow;
+
+  /// Minimum horizontal pointer speed, in logical pixels per second, for a
+  /// direction change to count as a reversal. Defaults to 600.
+  final double velocityThreshold;
+
+  /// Minimum time between two shake detections.
+  /// Defaults to 500 milliseconds.
+  final Duration cooldown;
+
+  /// Duration of the shake animation. Defaults to 400 milliseconds.
+  final Duration duration;
+
+  /// Horizontal travel of the shake animation in logical pixels.
+  /// Defaults to 8.
+  final double intensity;
+
+  /// Whether a heavy haptic impact plays when a shake is detected.
+  /// Defaults to `true`.
   final bool enableHaptics;
+
+  /// When `false`, gestures and controller triggers are ignored.
+  final bool enabled;
 
   @override
   State<ShakeToAction> createState() => _ShakeToActionState();
@@ -35,108 +112,192 @@ class ShakeToAction extends StatefulWidget {
 
 class _ShakeToActionState extends State<ShakeToAction>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _shakeAnimation;
-  DateTime? _lastShakeTime;
-  bool _isShaking = false;
+  late final AnimationController _controller;
+  DateTime? _lastTriggerTime;
+
+  // Gesture heuristic state.
+  int _lastDeltaSign = 0;
+  DateTime? _lastMoveTime;
+  final List<DateTime> _reversalTimes = <DateTime>[];
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _shakeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.elasticOut,
-    ));
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+    widget.controller?.addListener(_onControllerShake);
+  }
+
+  @override
+  void didUpdateWidget(ShakeToAction oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+    }
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.removeListener(_onControllerShake);
+      widget.controller?.addListener(_onControllerShake);
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    widget.controller?.removeListener(_onControllerShake);
+    _controller.dispose();
     super.dispose();
   }
 
-  void _triggerShake() async {
-    final now = DateTime.now();
-    if (_lastShakeTime != null &&
-        now.difference(_lastShakeTime!) < widget.shakeDuration) {
+  void _onControllerShake() {
+    if (widget.enabled) {
+      _trigger();
+    }
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (!widget.enabled) {
+      return;
+    }
+    final DateTime now = DateTime.now();
+    final double dx = details.delta.dx;
+    if (dx == 0) {
       return;
     }
 
-    _lastShakeTime = now;
-    _isShaking = true;
-
-    if (widget.enableHaptics) {
-      try {
-        await HapticFeedback.heavyImpact();
-      } catch (e) {
-        // Haptic feedback might not be available on all platforms
+    // Estimate horizontal speed from the time between pointer updates.
+    double speed = double.infinity;
+    if (_lastMoveTime != null) {
+      final int elapsedMicros = now.difference(_lastMoveTime!).inMicroseconds;
+      if (elapsedMicros > 0) {
+        speed = dx.abs() /
+            (elapsedMicros / Duration.microsecondsPerSecond);
       }
     }
+    _lastMoveTime = now;
 
-    _animationController.forward().then((_) {
-      _animationController.reverse().then((_) {
-        _isShaking = false;
-      });
-    });
+    final int sign = dx.sign.toInt();
+    final bool reversed = _lastDeltaSign != 0 && sign != _lastDeltaSign;
+    _lastDeltaSign = sign;
 
+    if (reversed && speed >= widget.velocityThreshold) {
+      _reversalTimes.add(now);
+      _reversalTimes.removeWhere(
+          (DateTime t) => now.difference(t) > widget.detectionWindow);
+      if (_reversalTimes.length >= widget.requiredReversals) {
+        _reversalTimes.clear();
+        _trigger();
+      }
+    }
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    _lastDeltaSign = 0;
+    _lastMoveTime = null;
+    _reversalTimes.clear();
+  }
+
+  void _trigger() {
+    final DateTime now = DateTime.now();
+    if (_lastTriggerTime != null &&
+        now.difference(_lastTriggerTime!) < widget.cooldown) {
+      return;
+    }
+    _lastTriggerTime = now;
+
+    if (widget.enableHaptics) {
+      // Fire and forget; never delays the animation or callback.
+      HapticFeedback.heavyImpact();
+    }
     widget.onShake();
+
+    if (!MicroMotion.isReduced(context)) {
+      _controller.forward(from: 0);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onPanUpdate: (details) {
-        // Simulate shake detection based on pan velocity
-        final velocity = details.delta.distance;
-        if (velocity > widget.shakeThreshold && !_isShaking) {
-          _triggerShake();
-        }
-      },
-      child: AnimatedBuilder(
-        animation: _shakeAnimation,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(
-              math.sin(_shakeAnimation.value * math.pi * 4) * 5,
-              0,
-            ),
-            child: widget.child,
-          );
-        },
+      onHorizontalDragUpdate: widget.enabled ? _handleDragUpdate : null,
+      onHorizontalDragEnd: widget.enabled ? _handleDragEnd : null,
+      child: _ShakeTransform(
+        animation: _controller,
+        intensity: widget.intensity,
+        child: widget.child,
       ),
     );
   }
 }
 
-/// A widget that provides shake animation without gesture detection.
+/// Applies a damped horizontal shake driven by [animation] to [child].
+class _ShakeTransform extends StatelessWidget {
+  const _ShakeTransform({
+    required this.animation,
+    required this.intensity,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final double intensity;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        final double t = animation.value;
+        // Damped sine: fast oscillation that dies out towards the end.
+        final double offset = math.sin(t * math.pi * 6) * intensity * (1 - t);
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+/// Plays a horizontal shake animation on demand.
+///
+/// The animation is triggered through a [ShakeController]:
+///
+/// ```dart
+/// final controller = ShakeController();
+/// // ...
+/// ShakeAnimation(
+///   controller: controller,
+///   child: const TextField(),
+/// );
+/// // on validation error:
+/// controller.shake();
+/// ```
+///
+/// Under reduced motion the widget renders its child without translating it.
 class ShakeAnimation extends StatefulWidget {
   /// Creates a shake animation widget.
   const ShakeAnimation({
     super.key,
     required this.child,
-    this.duration = const Duration(milliseconds: 500),
-    this.intensity = 5.0,
-    this.trigger,
-  });
+    this.controller,
+    this.duration = const Duration(milliseconds: 400),
+    this.intensity = 8.0,
+    this.enabled = true,
+  }) : assert(intensity >= 0, 'intensity must not be negative');
 
-  /// The child widget to animate.
+  /// The widget to shake.
   final Widget child;
 
-  /// Duration of the shake animation.
+  /// Controller whose [ShakeController.shake] plays the animation.
+  final ShakeController? controller;
+
+  /// Duration of one shake. Defaults to 400 milliseconds.
   final Duration duration;
 
-  /// Intensity of the shake (distance in pixels).
+  /// Horizontal travel of the shake in logical pixels. Defaults to 8.
   final double intensity;
 
-  /// External trigger for the animation.
-  final ValueNotifier<bool>? trigger;
+  /// When `false`, controller triggers are ignored.
+  final bool enabled;
 
   @override
   State<ShakeAnimation> createState() => _ShakeAnimationState();
@@ -144,117 +305,153 @@ class ShakeAnimation extends StatefulWidget {
 
 class _ShakeAnimationState extends State<ShakeAnimation>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    _animation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+    widget.controller?.addListener(_onShake);
+  }
 
-    widget.trigger?.addListener(_onTrigger);
+  @override
+  void didUpdateWidget(ShakeAnimation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+    }
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.removeListener(_onShake);
+      widget.controller?.addListener(_onShake);
+    }
   }
 
   @override
   void dispose() {
-    widget.trigger?.removeListener(_onTrigger);
+    widget.controller?.removeListener(_onShake);
     _controller.dispose();
     super.dispose();
   }
 
-  void _onTrigger() {
-    if (widget.trigger?.value == true) {
-      shake();
+  void _onShake() {
+    if (!widget.enabled) {
+      return;
     }
-  }
-
-  /// Manually trigger the shake animation.
-  void shake() {
-    _controller.forward().then((_) {
-      _controller.reverse();
-    });
+    if (MicroMotion.isReduced(context)) {
+      return;
+    }
+    _controller.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(
-            math.sin(_animation.value * math.pi * 8) * widget.intensity,
-            0,
-          ),
-          child: widget.child,
-        );
-      },
+    return _ShakeTransform(
+      animation: _controller,
+      intensity: widget.intensity,
+      child: widget.child,
     );
   }
 }
 
-/// A button that shakes when pressed with invalid input.
+/// Builds a button-like widget that shakes when pressed while invalid.
+///
+/// The [builder] receives a callback to wire into the actual button. When
+/// pressed and [isValid] is `true`, [onPressed] runs. When pressed and
+/// [isValid] is `false`, the child shakes and [onInvalidPress] runs.
+///
+/// ```dart
+/// ShakeButton(
+///   isValid: form.isComplete,
+///   onPressed: submit,
+///   onInvalidPress: showValidationHint,
+///   builder: (context, handlePressed) => ElevatedButton(
+///     onPressed: handlePressed,
+///     child: const Text('Submit'),
+///   ),
+/// )
+/// ```
+///
+/// The invalid state is conveyed to assistive technology through
+/// `Semantics(enabled: false)`.
 class ShakeButton extends StatefulWidget {
   /// Creates a shake button.
   const ShakeButton({
     super.key,
-    required this.child,
-    required this.onPressed,
+    required this.builder,
+    this.onPressed,
     this.onInvalidPress,
     this.isValid = true,
-  });
+    this.intensity = 8.0,
+    this.duration = const Duration(milliseconds: 400),
+    this.enableHaptics = true,
+    this.enabled = true,
+  }) : assert(intensity >= 0, 'intensity must not be negative');
 
-  /// The button content.
-  final Widget child;
+  /// Builds the button. The provided callback must be used as the button's
+  /// press handler so the shake logic can run.
+  final Widget Function(BuildContext context, VoidCallback handlePressed)
+      builder;
 
-  /// Callback when button is pressed and valid.
+  /// Called when the button is pressed while [isValid] is `true`.
   final VoidCallback? onPressed;
 
-  /// Callback when button is pressed but invalid.
+  /// Called when the button is pressed while [isValid] is `false`.
   final VoidCallback? onInvalidPress;
 
-  /// Whether the button state is valid.
+  /// Whether pressing the button runs [onPressed] instead of shaking.
   final bool isValid;
+
+  /// Horizontal travel of the shake in logical pixels. Defaults to 8.
+  final double intensity;
+
+  /// Duration of the shake. Defaults to 400 milliseconds.
+  final Duration duration;
+
+  /// Whether an error haptic plays on an invalid press. Defaults to `true`.
+  final bool enableHaptics;
+
+  /// When `false`, presses are ignored entirely.
+  final bool enabled;
 
   @override
   State<ShakeButton> createState() => _ShakeButtonState();
 }
 
 class _ShakeButtonState extends State<ShakeButton> {
-  final ValueNotifier<bool> _shakeTrigger = ValueNotifier<bool>(false);
+  final ShakeController _shakeController = ShakeController();
 
-  void _handlePress() {
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  void _handlePressed() {
+    if (!widget.enabled) {
+      return;
+    }
     if (widget.isValid) {
       widget.onPressed?.call();
     } else {
-      _shakeTrigger.value = true;
-      _shakeTrigger.value = false;
+      if (widget.enableHaptics) {
+        // Fire and forget; never delays the animation or callback.
+        HapticFeedback.vibrate();
+      }
+      _shakeController.shake();
       widget.onInvalidPress?.call();
     }
   }
 
   @override
-  void dispose() {
-    _shakeTrigger.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ShakeAnimation(
-      trigger: _shakeTrigger,
-      child: ElevatedButton(
-        onPressed: _handlePress,
-        child: widget.child,
+    return Semantics(
+      enabled: widget.enabled && widget.isValid,
+      child: ShakeAnimation(
+        controller: _shakeController,
+        intensity: widget.intensity,
+        duration: widget.duration,
+        enabled: widget.enabled,
+        child: widget.builder(context, _handlePressed),
       ),
     );
   }

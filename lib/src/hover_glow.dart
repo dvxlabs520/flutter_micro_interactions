@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
 
-/// A widget that provides a glow effect on hover for desktop/web platforms.
+import 'utils/motion.dart';
+
+/// Adds an animated glow around its child on mouse hover or keyboard focus.
+///
+/// The glow fades in when the pointer enters (or the widget subtree gains
+/// focus) and fades out when it leaves, driven entirely by the animation
+/// value so the exit fade is smooth. Colors default to the theme's
+/// `colorScheme.primary`.
+///
+/// When the platform requests reduced motion the glow switches instantly
+/// instead of animating.
+///
+/// ```dart
+/// HoverGlow(
+///   borderRadius: BorderRadius.circular(12),
+///   child: const Card(child: Padding(
+///     padding: EdgeInsets.all(24),
+///     child: Text('Hover me'),
+///   )),
+/// )
+/// ```
 class HoverGlow extends StatefulWidget {
   /// Creates a hover glow widget.
   const HoverGlow({
@@ -8,81 +28,142 @@ class HoverGlow extends StatefulWidget {
     required this.child,
     this.glowColor,
     this.glowRadius = 12.0,
+    this.spreadRadius = 4.0,
+    this.glowOpacity = 0.5,
+    this.borderRadius,
     this.duration = const Duration(milliseconds: 200),
-  });
+    this.curve = Curves.easeInOut,
+    this.onHoverChanged,
+    this.enabled = true,
+  })  : assert(glowRadius >= 0, 'glowRadius must not be negative'),
+        assert(spreadRadius >= 0, 'spreadRadius must not be negative'),
+        assert(glowOpacity >= 0 && glowOpacity <= 1.0,
+            'glowOpacity must be in [0, 1]');
 
-  /// The child widget to apply the glow effect to.
+  /// The widget that receives the glow.
   final Widget child;
 
-  /// The color of the glow effect.
+  /// Color of the glow. Defaults to the theme's `colorScheme.primary`.
   final Color? glowColor;
 
-  /// The radius of the glow effect.
+  /// Blur radius of the glow shadow at full strength.
   final double glowRadius;
 
-  /// The duration of the glow animation.
+  /// Spread radius of the glow shadow at full strength.
+  final double spreadRadius;
+
+  /// Peak opacity of the glow, in `[0, 1]`.
+  final double glowOpacity;
+
+  /// Corner rounding of the glow shape. When null the glow follows a
+  /// rectangular outline.
+  final BorderRadius? borderRadius;
+
+  /// Length of the fade animation. Defaults to 200 milliseconds.
   final Duration duration;
+
+  /// Curve of the fade animation. Defaults to [Curves.easeInOut].
+  final Curve curve;
+
+  /// Called when the hover state changes.
+  final ValueChanged<bool>? onHoverChanged;
+
+  /// Whether the glow reacts to hover and focus. When false the child
+  /// renders unchanged.
+  final bool enabled;
 
   @override
   State<HoverGlow> createState() => _HoverGlowState();
 }
 
-class _HoverGlowState extends State<HoverGlow> with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
-  late AnimationController _controller;
-  late Animation<double> _animation;
+class _HoverGlowState extends State<HoverGlow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late CurvedAnimation _animation;
+  bool _hovered = false;
+  bool _focused = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
+  }
+
+  @override
+  void didUpdateWidget(HoverGlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+    }
+    if (widget.curve != oldWidget.curve) {
+      _animation.dispose();
+      _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
+    }
+    if (!widget.enabled && oldWidget.enabled) {
+      _hovered = false;
+      _focused = false;
+      _controller.value = 0.0;
+    }
   }
 
   @override
   void dispose() {
+    _animation.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  void _handleHoverChanged(bool isHovered) {
-    setState(() {
-      _isHovered = isHovered;
-    });
-    if (isHovered) {
+  void _updateGlow() {
+    final bool active = _hovered || _focused;
+    if (MicroMotion.isReduced(context)) {
+      _controller.value = active ? 1.0 : 0.0;
+    } else if (active) {
       _controller.forward();
     } else {
       _controller.reverse();
     }
   }
 
+  void _handleHoverHighlight(bool hovered) {
+    if (_hovered == hovered) return;
+    _hovered = hovered;
+    _updateGlow();
+    widget.onHoverChanged?.call(hovered);
+  }
+
+  void _handleFocusHighlight(bool focused) {
+    if (_focused == focused) return;
+    _focused = focused;
+    _updateGlow();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => _handleHoverChanged(true),
-      onExit: (_) => _handleHoverChanged(false),
+    if (!widget.enabled) {
+      return widget.child;
+    }
+    final Color color =
+        widget.glowColor ?? Theme.of(context).colorScheme.primary;
+    return FocusableActionDetector(
+      onShowHoverHighlight: _handleHoverHighlight,
+      onShowFocusHighlight: _handleFocusHighlight,
       child: AnimatedBuilder(
         animation: _animation,
-        builder: (context, child) {
-          return Container(
+        builder: (BuildContext context, Widget? child) {
+          final double t = _animation.value;
+          return DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(widget.glowRadius),
-              boxShadow: _isHovered
-                  ? [
+              borderRadius: widget.borderRadius,
+              boxShadow: t == 0.0
+                  ? null
+                  : <BoxShadow>[
                       BoxShadow(
-                        color: (widget.glowColor ?? Theme.of(context).primaryColor)
-                            .withValues(alpha: 0.5 * _animation.value),
-                        blurRadius: widget.glowRadius * _animation.value,
-                        spreadRadius: widget.glowRadius * 0.8 * _animation.value,
+                        color: color.withValues(alpha: widget.glowOpacity * t),
+                        blurRadius: widget.glowRadius * t,
+                        spreadRadius: widget.spreadRadius * t,
                       ),
-                    ]
-                  : null,
+                    ],
             ),
             child: child,
           );

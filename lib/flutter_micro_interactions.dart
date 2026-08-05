@@ -1,20 +1,34 @@
-library flutter_micro_interactions;
+/// Pre-built micro-interactions and animations for Flutter apps.
+library;
 
+export 'src/animated_badge.dart';
+export 'src/animated_check.dart';
+export 'src/animated_counter.dart';
+export 'src/animated_gradient_border.dart';
 export 'src/button_states.dart';
+export 'src/card_flip.dart';
 export 'src/elastic_scroll.dart';
+export 'src/expandable_fab.dart';
+export 'src/floating_label.dart';
 export 'src/hover_glow.dart';
 export 'src/input_focus.dart';
+export 'src/liquid_progress.dart';
 export 'src/loading_skeletons.dart';
 export 'src/long_press_menu.dart';
 export 'src/morphing_shapes.dart';
 export 'src/page_transitions.dart';
 export 'src/parallax_scroll.dart';
 export 'src/pull_to_refresh.dart';
+export 'src/pulse_highlight.dart';
+export 'src/reorderable_list.dart';
 export 'src/ripple_effect.dart';
 export 'src/shake_to_action.dart';
+export 'src/shimmer_button.dart';
+export 'src/slide_to_confirm.dart';
+export 'src/staggered_list.dart';
+export 'src/success_burst.dart';
 export 'src/swipe_actions.dart';
 export 'src/tap_feedback.dart';
 export 'src/toast_notifications.dart';
-export 'src/floating_label.dart';
-export 'src/reorderable_list.dart';
-export 'src/card_flip.dart';
+export 'src/typewriter_text.dart';
+export 'src/utils/motion.dart';

@@ -1,159 +1,155 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+Widget _wrap(Widget child) {
+  return MaterialApp(home: Scaffold(body: Center(child: child)));
+}
 
 void main() {
   group('TapFeedback', () {
-    testWidgets('default constructor works correctly', (WidgetTester tester) async {
+    testWidgets('renders its child', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TapFeedback(
-              onTap: () {},
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Test'),
-              ),
-            ),
-          ),
-        ),
+        _wrap(TapFeedback(child: Text('Tap me'))),
       );
-
-      final button = find.byType(ElevatedButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(button).width, greaterThan(0));
+      expect(find.text('Tap me'), findsOneWidget);
     });
 
-    testWidgets('bounce animation works correctly', (WidgetTester tester) async {
+    testWidgets('fires onTap immediately on tap-up', (WidgetTester tester) async {
+      bool tapped = false;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TapFeedback.bounce(
-              onTap: () {},
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Test'),
-              ),
-            ),
+        _wrap(
+          TapFeedback(
+            onTap: () => tapped = true,
+            child: const SizedBox(width: 100, height: 40, child: Text('Tap')),
           ),
         ),
       );
 
-      final button = find.byType(ElevatedButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(button).width, greaterThan(0));
+      await tester.tap(find.text('Tap'));
+      // The callback fires on tap-up without waiting for any animation pump.
+      expect(tapped, isTrue);
+      await tester.pumpAndSettle();
     });
 
-    testWidgets('scale animation works correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TapFeedback.scale(
+    for (final TapAnimationType effect in TapAnimationType.values) {
+      testWidgets('effect $effect animates a press and release',
+          (WidgetTester tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            TapFeedback(
+              effect: effect,
               onTap: () {},
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Test'),
-              ),
+              child: const SizedBox(width: 100, height: 40, child: Text('Tap')),
             ),
+          ),
+        );
+
+        final TestGesture gesture =
+            await tester.startGesture(tester.getCenter(find.text('Tap')));
+        await tester.pump(const Duration(milliseconds: 80));
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(find.text('Tap'), findsOneWidget);
+      });
+    }
+
+    testWidgets('static constructors build', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          Column(
+            children: <Widget>[
+              TapFeedback.scale(child: const Text('scale')),
+              TapFeedback.bounce(child: const Text('bounce')),
+              TapFeedback.fade(child: const Text('fade')),
+              TapFeedback.scaleAndOpacity(child: const Text('both')),
+            ],
           ),
         ),
       );
-
-      final button = find.byType(ElevatedButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(button).width, greaterThan(0));
+      expect(find.text('scale'), findsOneWidget);
+      expect(find.text('bounce'), findsOneWidget);
+      expect(find.text('fade'), findsOneWidget);
+      expect(find.text('both'), findsOneWidget);
     });
 
-    testWidgets('fade animation works correctly', (WidgetTester tester) async {
+    testWidgets('enabled false renders child and never fires onTap',
+        (WidgetTester tester) async {
+      bool tapped = false;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TapFeedback.fade(
-              onTap: () {},
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Test'),
-              ),
-            ),
+        _wrap(
+          TapFeedback(
+            enabled: false,
+            onTap: () => tapped = true,
+            child: const SizedBox(width: 100, height: 40, child: Text('Tap')),
           ),
         ),
       );
-
-      final button = find.byType(ElevatedButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
+      await tester.tap(find.text('Tap'), warnIfMissed: false);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(button).width, greaterThan(0));
+      expect(tapped, isFalse);
     });
 
-    testWidgets('scaleAndOpacity animation works correctly', (WidgetTester tester) async {
+    testWidgets('exposes button semantics with label',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TapFeedback.scaleAndOpacity(
-              onTap: () {},
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Test'),
-              ),
-            ),
+        _wrap(
+          TapFeedback(
+            semanticLabel: 'Do it',
+            onTap: () {},
+            child: const SizedBox(width: 100, height: 40),
           ),
         ),
       );
-
-      final button = find.byType(ElevatedButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.getSize(button).width, greaterThan(0));
+      expect(find.bySemanticsLabel('Do it'), findsOneWidget);
     });
 
-    testWidgets('custom configuration works correctly', (WidgetTester tester) async {
+    testWidgets('reduced motion: tap fires callback with no animations',
+        (WidgetTester tester) async {
+      bool tapped = false;
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TapFeedback(
-              onTap: () {},
-              scaleDown: 0.85,
-              scaleUp: 1.05,
-              opacity: 0.7,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOutBack,
-              enableScale: true,
-              enableOpacity: true,
-              enableHaptics: true,
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Test'),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: Center(
+                child: TapFeedback(
+                  onTap: () => tapped = true,
+                  child:
+                      const SizedBox(width: 100, height: 40, child: Text('Tap')),
+                ),
               ),
             ),
           ),
         ),
       );
 
-      final button = find.byType(ElevatedButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
+      await tester.tap(find.text('Tap'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(tester.getSize(button).width, greaterThan(0));
+      expect(tapped, isTrue);
+      // No press animation is scheduled under reduced motion.
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('disposal mid-animation does not throw',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          TapFeedback(
+            onTap: () {},
+            child: const SizedBox(width: 100, height: 40, child: Text('Tap')),
+          ),
+        ),
+      );
+
+      final TestGesture gesture =
+          await tester.startGesture(tester.getCenter(find.text('Tap')));
+      await tester.pump(const Duration(milliseconds: 50));
+      // Replace the tree while the press animation is running.
+      await tester.pumpWidget(Container());
+      await gesture.up();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
     });
   });
-} 
+}

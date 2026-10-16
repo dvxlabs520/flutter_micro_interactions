@@ -1,3 +1,10 @@
+## 0.3.2
+
+### Documentation
+
+* The README now opens with a GIF of the new AI and agent widgets and a
+  short note that they are a few of the animations added in 0.3.
+
 ## 0.3.1
 
 ### Fixed

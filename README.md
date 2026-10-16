@@ -1,5 +1,7 @@
 # Flutter Micro Interactions
 
+![AI and agent widgets: BorderBeam, ThinkingOrb, ThinkingSteps, ToolCallChip, StreamingText, VoiceGlow and VoicePill](https://raw.githubusercontent.com/dvxlabs520/flutter_micro_interactions/develop/doc/ai_widgets.gif)
+
 A collection of ready-to-use micro-interactions and animations for Flutter.
 Add professional motion to your app with a few lines of code.
 

@@ -2,7 +2,7 @@ name: flutter_micro_interactions
 description: >-
   Micro-interactions and clean animations for Flutter, including AI interface
   motion: border beam, thinking orbs, streaming text, voice glow, and more.
-version: 0.3.0
+version: 0.3.1
 homepage: https://github.com/dvxlabs520/flutter_micro_interactions
 repository: https://github.com/dvxlabs520/flutter_micro_interactions
 issue_tracker: https://github.com/dvxlabs520/flutter_micro_interactions/issues

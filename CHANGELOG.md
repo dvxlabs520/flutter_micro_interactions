@@ -1,3 +1,11 @@
+## 0.3.1
+
+### Fixed
+
+* `StreamingText`: the streaming cursor now follows the visible words. It
+  no longer jumps ahead of words that have not started to appear yet, or
+  onto the next line.
+
 ## 0.3.0
 
 The largest release so far: more than 50 new widgets for AI interfaces,

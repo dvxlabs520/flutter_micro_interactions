@@ -391,7 +391,20 @@ class _RenderStreamingReveal extends RenderProxyBox {
   }
 
   void _paintCursor(Canvas canvas, RenderParagraph paragraph, Offset offset) {
-    final int end = paragraph.text.toPlainText().length;
+    final String text = paragraph.text.toPlainText();
+    // Follow the visible text: stop before the first word that has not
+    // started to appear yet, so the cursor never floats ahead of what the
+    // reader can see, nor sits on top of a word that is fading in.
+    int end = text.length;
+    for (final (_Segment segment, double t) in _frame.pending) {
+      if (t < 0.15) {
+        end = segment.start;
+        break;
+      }
+    }
+    while (end > 0 && text.codeUnitAt(end - 1) <= 0x20) {
+      end--;
+    }
     final Offset caret = paragraph.getOffsetForCaret(
       TextPosition(offset: end),
       Rect.zero,

@@ -28,7 +28,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_micro_interactions: ^0.3.0
+  flutter_micro_interactions: ^0.3.1
 ```
 
 Then import it:

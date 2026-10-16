@@ -174,6 +174,39 @@ void main() {
       expect(_reveal(tester), isNot(paints..circle()));
     });
 
+    testWidgets('cursor follows the visible words, not ahead of them', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(const StreamingText(text: 'Hello', showCursor: true)),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+        _richText('Hello'),
+      );
+      final double helloEnd = paragraph
+          .getOffsetForCaret(const TextPosition(offset: 5), Rect.zero)
+          .dx;
+
+      await tester.pumpWidget(
+        _wrap(const StreamingText(text: 'Hello wonderful', showCursor: true)),
+      );
+      await tester.pump(const Duration(milliseconds: 16));
+      double? cursorX;
+      double? textX;
+      expect(
+        _reveal(tester),
+        paints..everything((Symbol method, List<dynamic> args) {
+          if (method == #drawParagraph) textX ??= (args[1] as Offset).dx;
+          if (method == #drawCircle) cursorX = (args[0] as Offset).dx;
+          return true;
+        }),
+      );
+      // Just after "Hello", well before the end of the new word.
+      expect(cursorX! - textX!, lessThan(helloEnd + 30));
+      await tester.pump(const Duration(seconds: 1));
+    });
+
     testWidgets('cursor is static and fully visible under reduced motion', (
       WidgetTester tester,
     ) async {

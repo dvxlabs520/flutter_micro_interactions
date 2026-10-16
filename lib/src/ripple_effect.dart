@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'utils/motion.dart';
+import 'utils/press_listener.dart';
 
 /// Paints expanding circular ripples on top of its child when tapped.
 ///
@@ -98,15 +99,54 @@ class _RippleEffectState extends State<RippleEffect>
     super.dispose();
   }
 
-  void _startRipple(TapDownDetails details) {
-    if (!widget.enabled || MicroMotion.isReduced(context)) return;
+  /// Warns in debug builds when [RippleEffect.onTap] loses a tap.
+  final MicroLostTapWarning _lostTap = MicroLostTapWarning('RippleEffect');
+
+  /// When the current press started, to tell taps from long presses.
+  final Stopwatch _pressClock = Stopwatch();
+
+  /// The ripple of the press in progress, removed if the press turns into
+  /// a scroll.
+  _RippleEntry? _pressRipple;
+
+  void _handlePressStart(Offset localPosition) {
+    _pressClock
+      ..reset()
+      ..start();
+    _pressRipple = _startRipple(localPosition);
+  }
+
+  void _handlePressEnd(bool completed) {
+    final _RippleEntry? ripple = _pressRipple;
+    _pressRipple = null;
+    if (!completed) {
+      // The press became a scroll: drop its ripple instead of letting it
+      // play under the moving content.
+      if (ripple != null && _ripples.contains(ripple)) {
+        setState(() => _ripples.remove(ripple));
+        ripple.dispose();
+      }
+      return;
+    }
+    if (widget.onTap != null) {
+      _lostTap.pressCompleted(pressDuration: _pressClock.elapsed);
+    }
+  }
+
+  void _handleTap() {
+    _lostTap.tapHandled();
+    widget.onTap?.call();
+  }
+
+  _RippleEntry? _startRipple(Offset center) {
+    if (!widget.enabled || MicroMotion.isReduced(context)) return null;
     final AnimationController controller = AnimationController(
       vsync: this,
       duration: widget.duration,
     );
     final _RippleEntry entry = _RippleEntry(
       controller: controller,
-      center: details.localPosition,
+      center: center,
     );
     controller.addStatusListener((AnimationStatus status) {
       if (status != AnimationStatus.completed) return;
@@ -120,6 +160,7 @@ class _RippleEffectState extends State<RippleEffect>
       _ripples.add(entry);
     });
     controller.forward();
+    return entry;
   }
 
   @override
@@ -130,42 +171,48 @@ class _RippleEffectState extends State<RippleEffect>
     final Color color =
         widget.rippleColor ??
         Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
-    return GestureDetector(
-      onTapDown: _startRipple,
-      onTap: widget.onTap,
-      // Opaque so the whole child area is tappable, including transparent
-      // regions (for example a plain SizedBox child).
-      behavior: HitTestBehavior.opaque,
-      child: ClipRRect(
-        borderRadius: widget.borderRadius ?? BorderRadius.zero,
-        // Passthrough: the child gets this widget's own constraints, so a
-        // RippleEffect sizes exactly like its child would without it (for
-        // example it fills a tight width instead of shrinking to fit).
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: <Widget>[
-            widget.child,
-            if (_ripples.isNotEmpty)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: RepaintBoundary(
-                    child: CustomPaint(
-                      painter: _RipplePainter(
-                        ripples: _ripples,
-                        rippleColor: color,
-                        rippleCount: widget.rippleCount,
-                        rippleRadius: widget.rippleRadius,
-                        rippleSpreadDuration: widget.rippleSpreadDuration,
-                        animationDuration: widget.duration,
-                        repaint: Listenable.merge(<Listenable>[
-                          for (final _RippleEntry r in _ripples) r.controller,
-                        ]),
+    // The ripple starts from raw pointer events, so it shows on every press
+    // (over buttons, inside scroll views, for quick taps); only onTap enters
+    // the gesture arena, and only when it is set.
+    return MicroPressListener(
+      onPressStart: _handlePressStart,
+      onPressEnd: _handlePressEnd,
+      child: GestureDetector(
+        onTap: widget.onTap == null ? null : _handleTap,
+        // Opaque so the whole child area is tappable, including transparent
+        // regions (for example a plain SizedBox child).
+        behavior: HitTestBehavior.opaque,
+        child: ClipRRect(
+          borderRadius: widget.borderRadius ?? BorderRadius.zero,
+          // Passthrough: the child gets this widget's own constraints, so a
+          // RippleEffect sizes exactly like its child would without it (for
+          // example it fills a tight width instead of shrinking to fit).
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: <Widget>[
+              widget.child,
+              if (_ripples.isNotEmpty)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        painter: _RipplePainter(
+                          ripples: _ripples,
+                          rippleColor: color,
+                          rippleCount: widget.rippleCount,
+                          rippleRadius: widget.rippleRadius,
+                          rippleSpreadDuration: widget.rippleSpreadDuration,
+                          animationDuration: widget.duration,
+                          repaint: Listenable.merge(<Listenable>[
+                            for (final _RippleEntry r in _ripples) r.controller,
+                          ]),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

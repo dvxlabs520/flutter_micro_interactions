@@ -123,6 +123,14 @@ Many of the new widgets are inspired by React Bits (reactbits.dev).
 
 ### Fixed
 
+* `TapFeedback` and `RippleEffect` (issue #2, "the action happens sometimes,
+  but sometimes it doesn't"): the press feedback now starts from raw
+  pointer events, so it shows on every press, including quick taps inside
+  scroll views and over interactive children, and it is cancelled when the
+  press turns into a scroll. Their gesture detector only competes for taps
+  when `onTap` is set. When a child widget takes a tap away from `onTap`,
+  debug builds print a warning that explains why `onTap` did not run.
+  `TapFeedback` haptics now play when a tap completes, never on scroll.
 * `ShapeMorph`: turning `autoReverse` off now stops the loop, and a new
   `duration` applies to a running loop.
 * `ParallaxScroll`: the background is painted behind the layers again.

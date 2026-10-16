@@ -383,4 +383,75 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
   });
+
+  // Issue #2: ripples must show on every press, not only when the tap wins.
+  group('RippleEffect reliability', () {
+    bool hasRipple(WidgetTester tester) => find
+        .descendant(
+          of: find.byType(RippleEffect),
+          matching: find.byType(IgnorePointer),
+        )
+        .evaluate()
+        .isNotEmpty;
+
+    testWidgets('ripple starts at once over an interactive child', (
+      WidgetTester tester,
+    ) async {
+      int pressed = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: RippleEffect(
+                child: ElevatedButton(
+                  onPressed: () => pressed++,
+                  child: const Text('Go'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(find.text('Go')),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(hasRipple(tester), isTrue);
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(pressed, 1);
+    });
+
+    testWidgets('scrolling a list removes the press ripple', (
+      WidgetTester tester,
+    ) async {
+      int taps = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: <Widget>[
+                RippleEffect(
+                  onTap: () => taps++,
+                  child: const SizedBox(height: 60, child: Text('Row')),
+                ),
+                const SizedBox(height: 2000),
+              ],
+            ),
+          ),
+        ),
+      );
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(find.text('Row')),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(hasRipple(tester), isTrue);
+      await gesture.moveBy(const Offset(0, -80));
+      await tester.pump();
+      expect(hasRipple(tester), isFalse);
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(taps, 0);
+    });
+  });
 }

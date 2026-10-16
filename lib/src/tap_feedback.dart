@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'utils/motion.dart';
+import 'utils/press_listener.dart';
 
 /// The visual effect played by [TapFeedback] when the child is pressed.
 enum TapAnimationType {
@@ -27,11 +28,16 @@ enum TapAnimationType {
 ///
 /// [onTap] fires immediately on tap-up; it never waits for animations.
 ///
-/// The gesture detector uses [HitTestBehavior.opaque] so the whole child
-/// area is tappable, including transparent regions. Interactive children
-/// (for example an [ElevatedButton]) still receive their own tap events
-/// because they sit deeper in the hit-test order; in that case prefer
-/// leaving [onTap] null here and keeping the child's own callback.
+/// The press feedback starts the moment a finger or the mouse goes down,
+/// from raw pointer events, so it shows on every press: over interactive
+/// children, inside scroll views and for very quick taps. It is cancelled
+/// when the pointer moves away to scroll.
+///
+/// The whole child area is tappable, including transparent regions.
+/// Interactive children (for example an [ElevatedButton]) receive their own
+/// taps, because Flutter gives a tap to the innermost handler only; in that
+/// case leave [onTap] null here and keep the child's own callback. Debug
+/// builds print a warning when [onTap] is skipped for that reason.
 ///
 /// When the platform requests reduced motion no animation is played, but
 /// taps, haptics and callbacks still work.
@@ -98,7 +104,8 @@ class TapFeedback extends StatefulWidget {
   /// this value.
   final Curve curve;
 
-  /// Whether a light haptic impact is triggered on press.
+  /// Whether a light haptic impact is triggered when a press completes as
+  /// a tap. Presses that turn into a scroll never vibrate.
   final bool enableHaptics;
 
   /// Whether the feedback is active.
@@ -277,11 +284,17 @@ class _TapFeedbackState extends State<TapFeedback>
     end: widget.opacity,
   ).chain(CurveTween(curve: widget.curve));
 
-  void _handleTapDown(TapDownDetails details) {
+  /// Warns in debug builds when [TapFeedback.onTap] loses a tap.
+  final MicroLostTapWarning _lostTap = MicroLostTapWarning('TapFeedback');
+
+  /// When the current press started, to tell taps from long presses.
+  final Stopwatch _pressClock = Stopwatch();
+
+  void _handlePressStart(Offset localPosition) {
     if (!widget.enabled) return;
-    if (widget.enableHaptics) {
-      HapticFeedback.lightImpact();
-    }
+    _pressClock
+      ..reset()
+      ..start();
     if (MicroMotion.isReduced(context)) return;
     if (_usesScale) {
       _scale.parent = _controller.drive(_pressScaleTween());
@@ -320,16 +333,23 @@ class _TapFeedbackState extends State<TapFeedback>
     }
   }
 
-  void _handleTapUp(TapUpDetails details) {
+  void _handlePressEnd(bool completed) {
     if (!widget.enabled) return;
-    // Fire immediately; never wait for animations.
-    widget.onTap?.call();
     _release();
+    if (!completed) return;
+    if (widget.enableHaptics) {
+      HapticFeedback.lightImpact();
+    }
+    if (widget.onTap != null) {
+      _lostTap.pressCompleted(pressDuration: _pressClock.elapsed);
+    }
   }
 
-  void _handleTapCancel() {
+  void _handleTap() {
     if (!widget.enabled) return;
-    _release();
+    _lostTap.tapHandled();
+    // Fire immediately; never wait for animations.
+    widget.onTap?.call();
   }
 
   void _activateFromKeyboard() {
@@ -407,12 +427,17 @@ class _TapFeedbackState extends State<TapFeedback>
             },
           ),
         },
-        child: GestureDetector(
-          onTapDown: _handleTapDown,
-          onTapUp: _handleTapUp,
-          onTapCancel: _handleTapCancel,
-          behavior: HitTestBehavior.opaque,
-          child: child,
+        // Feedback comes from raw pointer events and never competes with
+        // the child or a scroll view; only onTap enters the gesture arena,
+        // and only when it is set.
+        child: MicroPressListener(
+          onPressStart: _handlePressStart,
+          onPressEnd: _handlePressEnd,
+          child: GestureDetector(
+            onTap: widget.onTap == null ? null : _handleTap,
+            behavior: HitTestBehavior.opaque,
+            child: child,
+          ),
         ),
       ),
     );

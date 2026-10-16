@@ -2,6 +2,11 @@
 
 ![AI and agent widgets: BorderBeam, ThinkingOrb, ThinkingSteps, ToolCallChip, StreamingText, VoiceGlow and VoicePill](https://raw.githubusercontent.com/dvxlabs520/flutter_micro_interactions/develop/doc/ai_widgets.gif)
 
+A few of the new AI and agent animations in version 0.3: `BorderBeam`,
+`ThinkingOrb`, `ThinkingSteps`, `ToolCallChip`, `StreamingText`, `VoiceGlow`,
+`VoicePill`, `LatticeLoader`, `TypingIndicator` and `StatusMark`. The release
+adds more than 50 new widgets in total, listed under [Widgets](#widgets).
+
 A collection of ready-to-use micro-interactions and animations for Flutter.
 Add professional motion to your app with a few lines of code.
 

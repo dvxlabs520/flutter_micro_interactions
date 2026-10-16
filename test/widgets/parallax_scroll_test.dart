@@ -20,8 +20,9 @@ Widget _wrap(Widget child) {
 
 void main() {
   group('ParallaxScroll', () {
-    testWidgets('renders foreground children over the background',
-        (WidgetTester tester) async {
+    testWidgets('renders foreground children over the background', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ParallaxScroll(
@@ -37,8 +38,9 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
     });
 
-    testWidgets('foreground scrolls while the background pans',
-        (WidgetTester tester) async {
+    testWidgets('foreground scrolls while the background pans', (
+      WidgetTester tester,
+    ) async {
       final ScrollController controller = ScrollController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -77,8 +79,72 @@ void main() {
       expect(find.text('Top'), findsOneWidget);
     });
 
-    testWidgets('reduced motion keeps the background static',
-        (WidgetTester tester) async {
+    testWidgets('paints the background behind the layers', (
+      WidgetTester tester,
+    ) async {
+      const Key backgroundKey = Key('background');
+      const Key deepKey = Key('deep');
+      const Key nearKey = Key('near');
+      await tester.pumpWidget(
+        _wrap(
+          ParallaxScroll(
+            background: Container(key: backgroundKey, color: Colors.blue),
+            layers: <ParallaxLayer>[
+              ParallaxLayer(
+                parallaxFactor: 0.2,
+                child: Container(key: deepKey, color: Colors.green),
+              ),
+              ParallaxLayer(
+                parallaxFactor: 0.4,
+                child: Container(key: nearKey, color: Colors.red),
+              ),
+            ],
+            children: const <Widget>[SizedBox(height: 100, child: Text('Top'))],
+          ),
+        ),
+      );
+
+      // Stack children paint in order, so the paint order of the three
+      // decorative layers is the order of their Positioned ancestors.
+      final Stack stack = tester.widget<Stack>(
+        find
+            .ancestor(
+              of: find.byKey(backgroundKey),
+              matching: find.byType(Stack),
+            )
+            .first,
+      );
+      int indexOf(Key key) {
+        final Element element = tester.element(find.byKey(key));
+        for (int i = 0; i < stack.children.length; i++) {
+          bool found = false;
+          element.visitAncestorElements((Element ancestor) {
+            if (identical(ancestor.widget, stack.children[i])) {
+              found = true;
+              return false;
+            }
+            return true;
+          });
+          if (found) {
+            return i;
+          }
+        }
+        return -1;
+      }
+
+      final int background = indexOf(backgroundKey);
+      final int deep = indexOf(deepKey);
+      final int near = indexOf(nearKey);
+      expect(background, isNot(-1));
+      expect(background, lessThan(deep));
+      expect(deep, lessThan(near));
+      // The foreground list is painted last, above every layer.
+      expect(stack.children.last, isA<ListView>());
+    });
+
+    testWidgets('reduced motion keeps the background static', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
@@ -103,8 +169,9 @@ void main() {
   });
 
   group('ParallaxImage', () {
-    testWidgets('builds inside a scrollable at the requested height',
-        (WidgetTester tester) async {
+    testWidgets('builds inside a scrollable at the requested height', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ListView(
@@ -126,8 +193,61 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('renders statically outside a scrollable',
-        (WidgetTester tester) async {
+    testWidgets('the image always covers its area at narrow widths', (
+      WidgetTester tester,
+    ) async {
+      // A square image laid out 100 wide would be only 100 tall, leaving
+      // a 120 pixel strip of the 220 pixel area uncovered.
+      final MemoryImage provider = MemoryImage(_kTransparentImage);
+      await tester.pumpWidget(
+        _wrap(
+          ListView(
+            children: <Widget>[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  width: 100,
+                  child: ParallaxImage(imageProvider: provider, height: 220),
+                ),
+              ),
+              const SizedBox(height: 600),
+            ],
+          ),
+        ),
+      );
+      await tester.runAsync(() async {
+        await precacheImage(
+          provider,
+          tester.element(find.byType(ParallaxImage)),
+        );
+      });
+      await tester.pump();
+      expect(tester.widget<RawImage>(find.byType(RawImage)).image, isNotNull);
+
+      void expectCovered() {
+        final Rect area = tester.getRect(find.byType(ParallaxImage));
+        final Rect image = tester.getRect(find.byType(RawImage));
+        expect(image.width, area.width);
+        expect(image.height, greaterThanOrEqualTo(area.height));
+        // The painted (translated) image spans the whole clip area.
+        final RenderBox box = tester.renderObject<RenderBox>(
+          find.byType(RawImage),
+        );
+        final Offset topLeft = box.localToGlobal(Offset.zero);
+        final Offset bottomLeft = box.localToGlobal(Offset(0, box.size.height));
+        expect(topLeft.dy, lessThanOrEqualTo(area.top + 0.001));
+        expect(bottomLeft.dy, greaterThanOrEqualTo(area.bottom - 0.001));
+      }
+
+      expectCovered();
+      await tester.drag(find.byType(ListView), const Offset(0, -150));
+      await tester.pump();
+      expectCovered();
+    });
+
+    testWidgets('renders statically outside a scrollable', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           Center(

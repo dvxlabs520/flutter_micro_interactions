@@ -43,8 +43,10 @@ class SwipeActions extends StatefulWidget {
     this.actionExtentRatio = 0.25,
     this.performsFirstActionOnFullSwipe = false,
     this.enabled = true,
-  }) : assert(actionExtentRatio > 0.0 && actionExtentRatio <= 0.5,
-            'actionExtentRatio must be in (0, 0.5]');
+  }) : assert(
+         actionExtentRatio > 0.0 && actionExtentRatio <= 0.5,
+         'actionExtentRatio must be in (0, 0.5]',
+       );
 
   /// The content of the row.
   final Widget child;
@@ -190,11 +192,13 @@ class _SwipeActionsState extends State<SwipeActions>
     }
 
     if (value > 0.0 && _leftExtent > 0.0) {
-      final bool open = velocity > _flingVelocity ||
+      final bool open =
+          velocity > _flingVelocity ||
           (velocity > -_flingVelocity && value > _leftExtent / 2);
       _animateTo(open ? _leftExtent : 0.0, velocity: velocity);
     } else if (value < 0.0 && _rightExtent > 0.0) {
-      final bool open = velocity < -_flingVelocity ||
+      final bool open =
+          velocity < -_flingVelocity ||
           (velocity < _flingVelocity && value < -_rightExtent / 2);
       _animateTo(open ? -_rightExtent : 0.0, velocity: velocity);
     } else {
@@ -215,7 +219,8 @@ class _SwipeActionsState extends State<SwipeActions>
   }
 
   Widget _buildActionButton(MicroSwipeAction action) {
-    final Color foreground = action.foregroundColor ??
+    final Color foreground =
+        action.foregroundColor ??
         (ThemeData.estimateBrightnessForColor(action.backgroundColor) ==
                 Brightness.dark
             ? Colors.white
@@ -288,13 +293,13 @@ class _SwipeActionsState extends State<SwipeActions>
 
     final Map<CustomSemanticsAction, VoidCallback> semanticsActions =
         <CustomSemanticsAction, VoidCallback>{
-      for (final MicroSwipeAction action in <MicroSwipeAction>[
-        ...widget.leftActions,
-        ...widget.rightActions,
-      ])
-        if (action.onPressed != null)
-          CustomSemanticsAction(label: action.label): action.onPressed!,
-    };
+          for (final MicroSwipeAction action in <MicroSwipeAction>[
+            ...widget.leftActions,
+            ...widget.rightActions,
+          ])
+            if (action.onPressed != null)
+              CustomSemanticsAction(label: action.label): action.onPressed!,
+        };
 
     return Semantics(
       customSemanticsActions: semanticsActions,
@@ -312,10 +317,14 @@ class _SwipeActionsState extends State<SwipeActions>
                   children: <Widget>[
                     if (widget.leftActions.isNotEmpty)
                       _buildActionRow(
-                          actions: widget.leftActions, leading: true),
+                        actions: widget.leftActions,
+                        leading: true,
+                      ),
                     if (widget.rightActions.isNotEmpty)
                       _buildActionRow(
-                          actions: widget.rightActions, leading: false),
+                        actions: widget.rightActions,
+                        leading: false,
+                      ),
                     AnimatedBuilder(
                       animation: _offset,
                       child: widget.child,
@@ -381,8 +390,10 @@ class MicroSwipeAction {
   final VoidCallback? onPressed;
 
   /// A delete action colored with [ColorScheme.error].
-  factory MicroSwipeAction.delete(BuildContext context,
-      {VoidCallback? onPressed}) {
+  factory MicroSwipeAction.delete(
+    BuildContext context, {
+    VoidCallback? onPressed,
+  }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return MicroSwipeAction(
       icon: Icons.delete,
@@ -394,8 +405,10 @@ class MicroSwipeAction {
   }
 
   /// An archive action colored with [ColorScheme.secondary].
-  factory MicroSwipeAction.archive(BuildContext context,
-      {VoidCallback? onPressed}) {
+  factory MicroSwipeAction.archive(
+    BuildContext context, {
+    VoidCallback? onPressed,
+  }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return MicroSwipeAction(
       icon: Icons.archive,
@@ -407,8 +420,10 @@ class MicroSwipeAction {
   }
 
   /// A favorite action colored with [ColorScheme.tertiary].
-  factory MicroSwipeAction.favorite(BuildContext context,
-      {VoidCallback? onPressed}) {
+  factory MicroSwipeAction.favorite(
+    BuildContext context, {
+    VoidCallback? onPressed,
+  }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return MicroSwipeAction(
       icon: Icons.favorite,
@@ -420,8 +435,10 @@ class MicroSwipeAction {
   }
 
   /// A share action colored with [ColorScheme.primary].
-  factory MicroSwipeAction.share(BuildContext context,
-      {VoidCallback? onPressed}) {
+  factory MicroSwipeAction.share(
+    BuildContext context, {
+    VoidCallback? onPressed,
+  }) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return MicroSwipeAction(
       icon: Icons.share,

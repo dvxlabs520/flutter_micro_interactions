@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
@@ -24,16 +28,173 @@ void main() {
     });
 
     test('accepts a custom initial state', () {
-      final ButtonStateController controller =
-          ButtonStateController(MicroButtonState.loading);
+      final ButtonStateController controller = ButtonStateController(
+        MicroButtonState.loading,
+      );
       addTearDown(controller.dispose);
       expect(controller.state, MicroButtonState.loading);
     });
   });
 
+  group('ButtonStateController.run', () {
+    testWidgets('loading, success, then idle after resetAfter', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      final Completer<int> completer = Completer<int>();
+      final Future<int?> result = controller.run(() => completer.future);
+      expect(controller.state, MicroButtonState.loading);
+
+      completer.complete(42);
+      expect(await result, 42);
+      expect(controller.state, MicroButtonState.success);
+
+      await tester.pump(const Duration(milliseconds: 1999));
+      expect(controller.state, MicroButtonState.success);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(controller.state, MicroButtonState.idle);
+    });
+
+    testWidgets('error state and null result on exception', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      final String? result = await controller.run<String>(
+        () async => throw StateError('nope'),
+        resetAfter: const Duration(milliseconds: 500),
+      );
+      expect(result, isNull);
+      expect(controller.state, MicroButtonState.error);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(controller.state, MicroButtonState.idle);
+    });
+
+    testWidgets('rethrowErrors rethrows after showing the error state', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      await expectLater(
+        controller.run<void>(
+          () async => throw StateError('nope'),
+          resetAfter: null,
+          rethrowErrors: true,
+        ),
+        throwsStateError,
+      );
+      expect(controller.state, MicroButtonState.error);
+    });
+
+    testWidgets('resetAfter null keeps the outcome state', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      await controller.run<void>(() async {}, resetAfter: null);
+      await tester.pump(const Duration(seconds: 10));
+      expect(controller.state, MicroButtonState.success);
+    });
+
+    testWidgets('does not reset when the state changed meanwhile', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      await controller.run<void>(() async {});
+      controller.setError();
+      await tester.pump(const Duration(seconds: 3));
+      expect(controller.state, MicroButtonState.error);
+    });
+
+    testWidgets('a manual change while pending wins over the result', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      final Completer<void> completer = Completer<void>();
+      final Future<void> pending = controller.run(() => completer.future);
+      controller.setIdle();
+      completer.complete();
+      await pending;
+      expect(controller.state, MicroButtonState.idle);
+      await tester.pump(const Duration(seconds: 3));
+      expect(controller.state, MicroButtonState.idle);
+    });
+
+    testWidgets('only the latest run updates the state', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      final Completer<void> first = Completer<void>();
+      final Completer<void> second = Completer<void>();
+      final Future<void> firstRun = controller.run(() => first.future);
+      final Future<void> secondRun = controller.run(
+        () => second.future,
+        resetAfter: null,
+      );
+      first.completeError(StateError('stale'));
+      await firstRun;
+      expect(controller.state, MicroButtonState.loading);
+      second.complete();
+      await secondRun;
+      expect(controller.state, MicroButtonState.success);
+    });
+
+    testWidgets('disposing while pending is safe', (WidgetTester tester) async {
+      final ButtonStateController controller = ButtonStateController();
+      final Completer<int> completer = Completer<int>();
+      final Future<int?> pending = controller.run(() => completer.future);
+      controller.dispose();
+      completer.complete(7);
+      expect(await pending, 7);
+      await tester.pump(const Duration(seconds: 3));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('disposing before the reset timer fires is safe', (
+      WidgetTester tester,
+    ) async {
+      final ButtonStateController controller = ButtonStateController();
+      await controller.run<void>(() async {});
+      controller.dispose();
+      await tester.pump(const Duration(seconds: 3));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('drives a ButtonStates widget', (WidgetTester tester) async {
+      final ButtonStateController controller = ButtonStateController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        _wrap(
+          ButtonStates(
+            controller: controller,
+            loadingBuilder: (BuildContext context) => const Text('loading'),
+            successBuilder: (BuildContext context) => const Text('done'),
+            child: const Text('Save'),
+          ),
+        ),
+      );
+      final Completer<void> completer = Completer<void>();
+      final Future<void> pending = controller.run(() => completer.future);
+      await tester.pumpAndSettle();
+      expect(find.text('loading'), findsOneWidget);
+      completer.complete();
+      await pending;
+      await tester.pumpAndSettle();
+      expect(find.text('done'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.text('Save'), findsOneWidget);
+    });
+  });
+
   group('ButtonStates', () {
-    testWidgets('shows child while idle and swaps custom builders per state',
-        (WidgetTester tester) async {
+    testWidgets('shows child while idle and swaps custom builders per state', (
+      WidgetTester tester,
+    ) async {
       final ButtonStateController controller = ButtonStateController();
       addTearDown(controller.dispose);
 
@@ -68,8 +229,9 @@ void main() {
       expect(find.text('IDLE'), findsOneWidget);
     });
 
-    testWidgets('default builders show spinner and icons',
-        (WidgetTester tester) async {
+    testWidgets('default builders show spinner and icons', (
+      WidgetTester tester,
+    ) async {
       final ButtonStateController controller = ButtonStateController();
       addTearDown(controller.dispose);
 
@@ -93,8 +255,9 @@ void main() {
       expect(find.byIcon(Icons.error), findsOneWidget);
     });
 
-    testWidgets('announces state changes to assistive technology',
-        (WidgetTester tester) async {
+    testWidgets('announces state changes to assistive technology', (
+      WidgetTester tester,
+    ) async {
       final ButtonStateController controller = ButtonStateController();
       addTearDown(controller.dispose);
 
@@ -116,7 +279,9 @@ void main() {
       );
     });
 
-    testWidgets('auto-resets success back to idle', (WidgetTester tester) async {
+    testWidgets('auto-resets success back to idle', (
+      WidgetTester tester,
+    ) async {
       final ButtonStateController controller = ButtonStateController();
       addTearDown(controller.dispose);
       final List<MicroButtonState> seen = <MicroButtonState>[];
@@ -149,8 +314,9 @@ void main() {
       ]);
     });
 
-    testWidgets('reduced motion swaps content instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion swaps content instantly', (
+      WidgetTester tester,
+    ) async {
       final ButtonStateController controller = ButtonStateController();
       addTearDown(controller.dispose);
 
@@ -176,8 +342,9 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('disposal while switching does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal while switching does not throw', (
+      WidgetTester tester,
+    ) async {
       final ButtonStateController controller = ButtonStateController();
       addTearDown(controller.dispose);
 

@@ -3,7 +3,9 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 /// Whether a face is currently visible (its [Opacity] ancestor is 1.0).
@@ -24,8 +26,9 @@ void main() {
       expect(_faceVisible(tester, 'Back'), isFalse);
     });
 
-    testWidgets('tap flips to the back and reports through onFlip',
-        (WidgetTester tester) async {
+    testWidgets('tap flips to the back and reports through onFlip', (
+      WidgetTester tester,
+    ) async {
       bool? flipped;
       await tester.pumpWidget(
         _wrap(
@@ -50,8 +53,9 @@ void main() {
       expect(_faceVisible(tester, 'Front'), isTrue);
     });
 
-    testWidgets('controller flip, showBack and showFront drive the card',
-        (WidgetTester tester) async {
+    testWidgets('controller flip, showBack and showFront drive the card', (
+      WidgetTester tester,
+    ) async {
       final CardFlipController controller = CardFlipController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -86,8 +90,9 @@ void main() {
       expect(controller.isFront, isFalse);
     });
 
-    testWidgets('controlled mode only reports; parent applies the value',
-        (WidgetTester tester) async {
+    testWidgets('controlled mode only reports; parent applies the value', (
+      WidgetTester tester,
+    ) async {
       bool isFlipped = false;
       await tester.pumpWidget(
         _wrap(
@@ -130,8 +135,9 @@ void main() {
       expect(_faceVisible(tester, 'Front'), isTrue);
     });
 
-    testWidgets('reduced motion swaps faces instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion swaps faces instantly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
@@ -154,8 +160,9 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('disposal mid-flip does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-flip does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(CardFlip(front: Text('Front'), back: Text('Back'))),
       );

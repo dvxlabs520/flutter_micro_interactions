@@ -62,8 +62,9 @@ void main() {
       expect(find.text('Item 0'), findsOneWidget);
     });
 
-    testWidgets('passes styling parameters through',
-        (WidgetTester tester) async {
+    testWidgets('passes styling parameters through', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           PullToRefresh(
@@ -75,8 +76,9 @@ void main() {
           ),
         ),
       );
-      final RefreshIndicator indicator =
-          tester.widget<RefreshIndicator>(find.byType(RefreshIndicator));
+      final RefreshIndicator indicator = tester.widget<RefreshIndicator>(
+        find.byType(RefreshIndicator),
+      );
       expect(indicator.color, Colors.red);
       expect(indicator.backgroundColor, Colors.yellow);
       expect(indicator.displacement, 60);

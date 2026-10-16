@@ -3,7 +3,9 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
@@ -50,8 +52,9 @@ void main() {
       expect(find.text('Copy'), findsNothing);
     });
 
-    testWidgets('destructive items use the error color',
-        (WidgetTester tester) async {
+    testWidgets('destructive items use the error color', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           LongPressMenu(
@@ -73,8 +76,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('enabled false attaches no gesture',
-        (WidgetTester tester) async {
+    testWidgets('enabled false attaches no gesture', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           LongPressMenu(

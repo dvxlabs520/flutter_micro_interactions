@@ -304,10 +304,7 @@ class _CardFlipState extends State<CardFlip>
     return Semantics(
       button: true,
       enabled: widget.enabled,
-      child: GestureDetector(
-        onTap: _handleTap,
-        child: card,
-      ),
+      child: GestureDetector(onTap: _handleTap, child: card),
     );
   }
 }
@@ -326,10 +323,7 @@ class _FaceVisibility extends StatelessWidget {
       ignoring: !visible,
       child: ExcludeSemantics(
         excluding: !visible,
-        child: Opacity(
-          opacity: visible ? 1.0 : 0.0,
-          child: child,
-        ),
+        child: Opacity(opacity: visible ? 1.0 : 0.0, child: child),
       ),
     );
   }

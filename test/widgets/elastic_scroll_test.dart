@@ -9,8 +9,9 @@ Widget _wrap(Widget child) {
 void main() {
   group('ElasticScrollPhysics', () {
     test('frictionFactor equals elasticity with no overscroll', () {
-      const ElasticScrollPhysics physics =
-          ElasticScrollPhysics(elasticity: 0.4);
+      const ElasticScrollPhysics physics = ElasticScrollPhysics(
+        elasticity: 0.4,
+      );
       expect(physics.frictionFactor(0.0), moreOrLessEquals(0.4));
       expect(physics.frictionFactor(0.5), lessThan(0.4));
     });
@@ -29,8 +30,9 @@ void main() {
   });
 
   group('ElasticScroll', () {
-    testWidgets('renders child and applies elastic physics',
-        (WidgetTester tester) async {
+    testWidgets('renders child and applies elastic physics', (
+      WidgetTester tester,
+    ) async {
       final ScrollController controller = ScrollController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -48,8 +50,8 @@ void main() {
       );
       expect(find.text('Item 0'), findsOneWidget);
 
-      final SingleChildScrollView scrollView =
-          tester.widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
+      final SingleChildScrollView scrollView = tester
+          .widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
       expect(scrollView.physics, isA<ElasticScrollPhysics>());
 
       // The content actually scrolls.
@@ -58,37 +60,38 @@ void main() {
       expect(controller.offset, greaterThan(0));
     });
 
-    testWidgets('enabled false falls back to default physics',
-        (WidgetTester tester) async {
+    testWidgets('enabled false falls back to default physics', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(ElasticScroll(enabled: false, child: Container(height: 10))),
       );
-      final SingleChildScrollView scrollView =
-          tester.widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
+      final SingleChildScrollView scrollView = tester
+          .widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
       expect(scrollView.physics, isNull);
     });
 
-    testWidgets('reduced motion clamps instead of bouncing',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion clamps instead of bouncing', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
-            child: Scaffold(
-              body: ElasticScroll(child: Container(height: 10)),
-            ),
+            child: Scaffold(body: ElasticScroll(child: Container(height: 10))),
           ),
         ),
       );
-      final SingleChildScrollView scrollView =
-          tester.widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
+      final SingleChildScrollView scrollView = tester
+          .widget<SingleChildScrollView>(find.byType(SingleChildScrollView));
       expect(scrollView.physics, isA<ClampingScrollPhysics>());
     });
   });
 
   group('ElasticListView', () {
-    testWidgets('children constructor renders items',
-        (WidgetTester tester) async {
+    testWidgets('children constructor renders items', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ElasticListView(
@@ -103,8 +106,9 @@ void main() {
       expect(find.text('Tile 4'), findsOneWidget);
     });
 
-    testWidgets('builder constructor builds items lazily',
-        (WidgetTester tester) async {
+    testWidgets('builder constructor builds items lazily', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ElasticListView.builder(
@@ -120,8 +124,9 @@ void main() {
   });
 
   group('ElasticGridView', () {
-    testWidgets('children and builder constructors render tiles',
-        (WidgetTester tester) async {
+    testWidgets('children and builder constructors render tiles', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ElasticGridView(

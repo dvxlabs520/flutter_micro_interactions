@@ -34,6 +34,8 @@ class SkeletonScope extends StatefulWidget {
   final Widget child;
 
   /// Duration of one shimmer sweep. Defaults to 1500 milliseconds.
+  ///
+  /// A change applies immediately, even while the shimmer is running.
   final Duration duration;
 
   /// The shared shimmer animation of the nearest enclosing [SkeletonScope],
@@ -71,6 +73,11 @@ class _SkeletonScopeState extends State<SkeletonScope>
     super.didUpdateWidget(oldWidget);
     if (widget.duration != oldWidget.duration) {
       _controller.duration = widget.duration;
+      if (_controller.isAnimating) {
+        // A running repeat keeps the period it started with; restart it
+        // from the current value so the new duration applies right away.
+        _controller.repeat();
+      }
       _syncAnimation();
     }
   }
@@ -92,10 +99,7 @@ class _SkeletonScopeState extends State<SkeletonScope>
 
   @override
   Widget build(BuildContext context) {
-    return _SkeletonScopeInherited(
-      animation: _controller,
-      child: widget.child,
-    );
+    return _SkeletonScopeInherited(animation: _controller, child: widget.child);
   }
 }
 
@@ -189,8 +193,7 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
 
   Animation<double> get _animation => _scopeAnimation ?? _ownController!;
 
-  bool get _shouldAnimate =>
-      widget.enabled && !MicroMotion.isReduced(context);
+  bool get _shouldAnimate => widget.enabled && !MicroMotion.isReduced(context);
 
   @override
   void didChangeDependencies() {
@@ -203,7 +206,14 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
   void didUpdateWidget(LoadingSkeleton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.duration != oldWidget.duration) {
-      _ownController?.duration = widget.duration;
+      final AnimationController? own = _ownController;
+      if (own != null) {
+        own.duration = widget.duration;
+        if (own.isAnimating) {
+          // Restart the running repeat so the new period applies now.
+          own.repeat();
+        }
+      }
     }
     _syncOwnController();
   }
@@ -215,8 +225,10 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
       _ownController?.stop();
       return;
     }
-    _ownController ??=
-        AnimationController(duration: widget.duration, vsync: this);
+    _ownController ??= AnimationController(
+      duration: widget.duration,
+      vsync: this,
+    );
     _ownController!.duration = widget.duration;
     if (!_ownController!.isAnimating) {
       _ownController!.repeat();
@@ -237,7 +249,8 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
 
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color base = widget.baseColor ?? scheme.surfaceContainerHighest;
-    final Color highlight = widget.highlightColor ??
+    final Color highlight =
+        widget.highlightColor ??
         Color.alphaBlend(scheme.onSurface.withValues(alpha: 0.08), base);
 
     final Widget skeleton;
@@ -287,7 +300,10 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
   /// so the gradient never pops at the loop edges. Directional alignments
   /// make the sweep follow the ambient text direction (RTL aware).
   static LinearGradient _shimmerGradient(
-      Color base, Color highlight, double t) {
+    Color base,
+    Color highlight,
+    double t,
+  ) {
     // Map t from [0, 1] to a band center travelling from -0.3 to 1.3 so the
     // highlight fully enters and exits the box.
     final double center = -0.3 + t * 1.6;
@@ -320,11 +336,13 @@ class TextSkeleton extends StatelessWidget {
     this.lineSpacing = 8.0,
     this.lastLineWidth = 0.7,
     this.enabled = true,
-  })  : assert(lines > 0, 'lines must be at least 1'),
-        assert(lineHeight > 0, 'lineHeight must be positive'),
-        assert(lineSpacing >= 0, 'lineSpacing must not be negative'),
-        assert(lastLineWidth > 0 && lastLineWidth <= 1,
-            'lastLineWidth must be in (0, 1]');
+  }) : assert(lines > 0, 'lines must be at least 1'),
+       assert(lineHeight > 0, 'lineHeight must be positive'),
+       assert(lineSpacing >= 0, 'lineSpacing must not be negative'),
+       assert(
+         lastLineWidth > 0 && lastLineWidth <= 1,
+         'lastLineWidth must be in (0, 1]',
+       );
 
   /// Number of lines. Defaults to 1.
   final int lines;
@@ -389,9 +407,9 @@ class CardSkeleton extends StatelessWidget {
     this.subtitleLines = 2,
     this.padding = const EdgeInsets.all(16.0),
     this.enabled = true,
-  })  : assert(imageHeight > 0, 'imageHeight must be positive'),
-        assert(titleLines > 0, 'titleLines must be at least 1'),
-        assert(subtitleLines >= 0, 'subtitleLines must not be negative');
+  }) : assert(imageHeight > 0, 'imageHeight must be positive'),
+       assert(titleLines > 0, 'titleLines must be at least 1'),
+       assert(subtitleLines >= 0, 'subtitleLines must not be negative');
 
   /// Whether an image placeholder is shown at the top. Defaults to `true`.
   final bool hasImage;
@@ -469,9 +487,9 @@ class ListItemSkeleton extends StatelessWidget {
     this.hasTrailing = false,
     this.padding = const EdgeInsets.all(16.0),
     this.enabled = true,
-  })  : assert(avatarSize > 0, 'avatarSize must be positive'),
-        assert(titleLines > 0, 'titleLines must be at least 1'),
-        assert(subtitleLines >= 0, 'subtitleLines must not be negative');
+  }) : assert(avatarSize > 0, 'avatarSize must be positive'),
+       assert(titleLines > 0, 'titleLines must be at least 1'),
+       assert(subtitleLines >= 0, 'subtitleLines must not be negative');
 
   /// Whether a circular avatar placeholder is shown. Defaults to `true`.
   final bool hasAvatar;
@@ -532,11 +550,7 @@ class ListItemSkeleton extends StatelessWidget {
           ),
           if (hasTrailing) ...[
             const SizedBox(width: 16),
-            LoadingSkeleton(
-              width: 24,
-              height: 24,
-              enabled: enabled,
-            ),
+            LoadingSkeleton(width: 24, height: 24, enabled: enabled),
           ],
         ],
       ),
@@ -559,9 +573,9 @@ class GridItemSkeleton extends StatelessWidget {
     this.subtitleLines = 1,
     this.padding = const EdgeInsets.all(8.0),
     this.enabled = true,
-  })  : assert(imageAspectRatio > 0, 'imageAspectRatio must be positive'),
-        assert(titleLines > 0, 'titleLines must be at least 1'),
-        assert(subtitleLines >= 0, 'subtitleLines must not be negative');
+  }) : assert(imageAspectRatio > 0, 'imageAspectRatio must be positive'),
+       assert(titleLines > 0, 'titleLines must be at least 1'),
+       assert(subtitleLines >= 0, 'subtitleLines must not be negative');
 
   /// Aspect ratio of the image placeholder. Defaults to 1 (square).
   final double imageAspectRatio;
@@ -596,11 +610,7 @@ class GridItemSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          TextSkeleton(
-            lines: titleLines,
-            lineHeight: 14.0,
-            enabled: enabled,
-          ),
+          TextSkeleton(lines: titleLines, lineHeight: 14.0, enabled: enabled),
           if (subtitleLines > 0) ...[
             const SizedBox(height: 4),
             TextSkeleton(

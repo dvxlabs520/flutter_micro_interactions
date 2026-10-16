@@ -48,10 +48,12 @@ class AnimatedBadge extends StatefulWidget {
     this.semanticLabel,
     this.announceChanges = false,
     this.enabled = true,
-  })  : assert(count >= 0, 'count must not be negative'),
-        assert(badgeSize > 0, 'badgeSize must be positive'),
-        assert(maxCount == null || maxCount > 0,
-            'maxCount must be positive when provided');
+  }) : assert(count >= 0, 'count must not be negative'),
+       assert(badgeSize > 0, 'badgeSize must be positive'),
+       assert(
+         maxCount == null || maxCount > 0,
+         'maxCount must be positive when provided',
+       );
 
   /// The widget the badge is attached to.
   final Widget child;
@@ -140,13 +142,17 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
   Animation<double> _createBounceScale() {
     return TweenSequence<double>(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.0, end: 1.3)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 1.3,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 40,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.3, end: 1.0)
-            .chain(CurveTween(curve: widget.curve)),
+        tween: Tween<double>(
+          begin: 1.3,
+          end: 1.0,
+        ).chain(CurveTween(curve: widget.curve)),
         weight: 60,
       ),
     ]).animate(_bounce);
@@ -229,7 +235,9 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
     final Duration swapDuration = !widget.enabled
         ? Duration.zero
         : MicroMotion.effectiveDuration(
-            context, const Duration(milliseconds: 150));
+            context,
+            const Duration(milliseconds: 150),
+          );
 
     return Container(
       constraints: BoxConstraints(minWidth: widget.badgeSize),
@@ -264,14 +272,12 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
 
   @override
   Widget build(BuildContext context) {
-    final Alignment resolved =
-        widget.alignment.resolve(Directionality.of(context));
+    final Alignment resolved = widget.alignment.resolve(
+      Directionality.of(context),
+    );
     Widget badge = ScaleTransition(
       scale: _visibilityScale,
-      child: ScaleTransition(
-        scale: _bounceScale,
-        child: _buildBadge(context),
-      ),
+      child: ScaleTransition(scale: _bounceScale, child: _buildBadge(context)),
     );
     badge = Semantics(
       label: _visible ? _label : null,

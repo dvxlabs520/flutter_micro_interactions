@@ -36,23 +36,28 @@ class ParallaxScroll extends StatefulWidget {
     this.controller,
     this.padding,
     this.physics,
-  })  : assert(parallaxFactor >= 0.0 && parallaxFactor <= 1.0,
-            'parallaxFactor must be in [0, 1]'),
-        assert(background != null || layers.length > 0,
-            'Provide a background or at least one layer');
+  }) : assert(
+         parallaxFactor >= 0.0 && parallaxFactor <= 1.0,
+         'parallaxFactor must be in [0, 1]',
+       ),
+       assert(
+         background != null || layers.length > 0,
+         'Provide a background or at least one layer',
+       );
 
   /// The foreground content, scrolled vertically.
   final List<Widget> children;
 
   /// The decorative background that pans with the parallax effect.
   ///
-  /// It is excluded from semantics.
+  /// It is painted behind every entry of [layers] and is excluded from
+  /// semantics.
   final Widget? background;
 
   /// Extra decorative layers, each with its own parallax factor.
   ///
-  /// Layers are painted behind the foreground in list order (the first layer
-  /// is the deepest).
+  /// Layers are painted above the [background] and behind the foreground,
+  /// in list order (the first layer is the deepest).
   final List<ParallaxLayer> layers;
 
   /// How much slower the [background] pans relative to the content.
@@ -160,19 +165,21 @@ class _ParallaxScrollState extends State<ParallaxScroll> {
         final double width = constraints.maxWidth;
         return Stack(
           children: <Widget>[
-            for (final ParallaxLayer layer in widget.layers)
-              _buildLayer(
-                controller: controller,
-                layerChild: layer.child,
-                factor: reduced ? 0.0 : layer.parallaxFactor,
-                width: width,
-                height: height,
-              ),
+            // Paint order, back to front: background, layers (first is the
+            // deepest), then the foreground list.
             if (widget.background != null)
               _buildLayer(
                 controller: controller,
                 layerChild: widget.background!,
                 factor: reduced ? 0.0 : widget.parallaxFactor,
+                width: width,
+                height: height,
+              ),
+            for (final ParallaxLayer layer in widget.layers)
+              _buildLayer(
+                controller: controller,
+                layerChild: layer.child,
+                factor: reduced ? 0.0 : layer.parallaxFactor,
                 width: width,
                 height: height,
               ),
@@ -194,11 +201,11 @@ class ParallaxLayer {
   /// Creates a parallax layer.
   ///
   /// [parallaxFactor] must be in `[0, 1]`.
-  const ParallaxLayer({
-    required this.child,
-    required this.parallaxFactor,
-  }) : assert(parallaxFactor >= 0.0 && parallaxFactor <= 1.0,
-            'parallaxFactor must be in [0, 1]');
+  const ParallaxLayer({required this.child, required this.parallaxFactor})
+    : assert(
+        parallaxFactor >= 0.0 && parallaxFactor <= 1.0,
+        'parallaxFactor must be in [0, 1]',
+      );
 
   /// The widget painted for this layer.
   final Widget child;
@@ -240,9 +247,11 @@ class ParallaxImage extends StatefulWidget {
     this.height = 200.0,
     this.fit = BoxFit.cover,
     this.semanticLabel,
-  })  : assert(parallaxFactor >= 0.0 && parallaxFactor <= 1.0,
-            'parallaxFactor must be in [0, 1]'),
-        assert(height > 0.0, 'height must be positive');
+  }) : assert(
+         parallaxFactor >= 0.0 && parallaxFactor <= 1.0,
+         'parallaxFactor must be in [0, 1]',
+       ),
+       assert(height > 0.0, 'height must be positive');
 
   /// The image to display.
   final ImageProvider imageProvider;
@@ -272,7 +281,8 @@ class _ParallaxImageState extends State<ParallaxImage> {
   @override
   Widget build(BuildContext context) {
     final ScrollableState? scrollable = Scrollable.maybeOf(context);
-    final bool static = scrollable == null ||
+    final bool static =
+        scrollable == null ||
         widget.parallaxFactor == 0.0 ||
         MicroMotion.isReduced(context);
 
@@ -327,16 +337,24 @@ class _ParallaxFlowDelegate extends FlowDelegate {
 
   @override
   BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
-    return BoxConstraints.tightFor(width: constraints.maxWidth);
+    // Full width, and at least as tall as the visible area: at narrow
+    // widths an image sized from its aspect ratio alone can end up shorter
+    // than the area and leave uncovered strips. With the minimum height the
+    // image's fit (cover by default) fills the whole area instead.
+    return BoxConstraints(
+      minWidth: constraints.maxWidth,
+      maxWidth: constraints.maxWidth,
+      minHeight: constraints.maxHeight,
+    );
   }
 
   @override
   void paintChildren(FlowPaintingContext context) {
-    final RenderObject? scrollableRender =
-        scrollable.context.findRenderObject();
+    final RenderObject? scrollableRender = scrollable.context
+        .findRenderObject();
     final RenderObject? itemRender = itemContext.findRenderObject();
-    final RenderObject? imageRender =
-        imageKey.currentContext?.findRenderObject();
+    final RenderObject? imageRender = imageKey.currentContext
+        ?.findRenderObject();
     if (scrollableRender is! RenderBox ||
         itemRender is! RenderBox ||
         imageRender is! RenderBox ||
@@ -351,12 +369,16 @@ class _ParallaxFlowDelegate extends FlowDelegate {
       ancestor: scrollableRender,
     );
     final double viewportDimension = scrollable.position.viewportDimension;
-    final double scrollFraction =
-        (itemOffset.dy / viewportDimension).clamp(0.0, 1.0);
+    final double scrollFraction = (itemOffset.dy / viewportDimension).clamp(
+      0.0,
+      1.0,
+    );
 
     // Slide the (taller) image inside the clip according to that fraction.
-    final Alignment verticalAlignment =
-        Alignment(0.0, (scrollFraction * 2 - 1) * parallaxFactor);
+    final Alignment verticalAlignment = Alignment(
+      0.0,
+      (scrollFraction * 2 - 1) * parallaxFactor,
+    );
     final Rect childRect = verticalAlignment.inscribe(
       imageRender.size,
       Offset.zero & context.size,

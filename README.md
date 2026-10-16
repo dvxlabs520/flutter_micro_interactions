@@ -3,7 +3,9 @@
 A collection of ready-to-use micro-interactions and animations for Flutter.
 Add professional motion to your app with a few lines of code.
 
-![Preview](micro_interactions.gif)
+Includes a set of clean animations for AI interfaces: a border beam for
+agents at work, thinking orbs, a reasoning trace, streaming text, and a
+voice glow that reacts to the microphone level.
 
 ## Why this package
 
@@ -17,7 +19,8 @@ Add professional motion to your app with a few lines of code.
 
 ## Requirements
 
-Flutter 3.38 or newer.
+Flutter 3.44 or newer. The package is tested on the latest stable release
+and the one before it.
 
 ## Installation
 
@@ -25,7 +28,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_micro_interactions: ^0.2.0
+  flutter_micro_interactions: ^0.3.0
 ```
 
 Then import it:
@@ -36,40 +39,380 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 
 ## Widgets
 
+More than 90 widgets, grouped the same way as in the example app.
+
+### AI and agents
+
 | Widget | What it does |
 | --- | --- |
-| `TapFeedback` | Scale, bounce, or fade feedback on tap |
-| `ButtonStates` | Loading, success, and error states for any button |
-| `HoverGlow` | Glow effect on hover and keyboard focus |
+| `BorderBeam` | Rainbow glow that rides the border of a card, button or input |
+| `ThinkingOrb` | Dotted 3D orb that replaces a spinner, in nine states |
+| `ThinkingSteps` | Reasoning trace with step status, live timer and collapse when done |
+| `StreamingText` | Text that fades or unblurs new words as they stream in |
+| `ToolCallChip` | Agent tool call chip with a progress wipe, timer and result |
+| `LatticeLoader` | Compact loader with a wave of cells and a stopwatch |
+| `RefineFrame` | Media frame that steps an image through generation stages |
+| `VoiceGlow` | Sound reactive glow for a voice input |
+| `VoicePill` | Mic button that grows into a recording capsule with live bars |
+| `VoiceWaveform` | Equalizer bars for a recording pill |
+| `ShimmerText` | The "Thinking..." light sweep, for text or any widget |
+| `TypingIndicator` | Typing dots: bounce, pulse or wave |
+| `StatusMark` | One glyph that morphs between idle, loading, success and error |
+
+### Text effects
+
+| Widget | What it does |
+| --- | --- |
+| `TextReveal` | Staggered entrance by character or word with fade, slide, blur or scale |
+| `DecryptedText` | Random glyphs that resolve into the real text |
+| `RotatingText` | Cycles phrases letter by letter through a mask |
+| `GradientText` | Text filled with a sliding or rotating gradient |
+| `TypewriterText` | Text that types itself out, with cursor and looping |
+
+### Borders and glow
+
+| Widget | What it does |
+| --- | --- |
+| `CometBorder` | A comet with a tail of light travels the outline |
+| `ElectricBorder` | Crackling strands of current along the border |
+| `AnimatedGradientBorder` | Sweeping gradient border |
+| `HoverGlow` | Glow on hover and keyboard focus |
+
+### Pointer and hover
+
+| Widget | What it does |
+| --- | --- |
+| `Magnet` | Pulls a widget toward the pointer, then springs back |
+| `SpotlightCard` | Card with a soft spotlight that follows the pointer |
+| `TiltCard` | 3D tilt toward the pointer with a glare highlight |
+| `GlareHover` | A glossy streak sweeps across on hover or press |
+| `ClickSpark` | Sparks that burst from every tap |
+| `HalftoneReveal` | A halftone image that turns into the real photo under the pointer |
+| `PixelSwap` | New content builds in cell by cell from where the pointer entered |
+| `PixelTransition` | Retro pixel dissolve between two widgets |
+
+### Cards and carousels
+
+| Widget | What it does |
+| --- | --- |
+| `DepthCarousel` | Cards on a 3D rail with drag, momentum and snapping |
+| `MorphSlider` | Image slider that melts, ripples or swirls between images (GPU shader) |
+| `ReflectiveCard` | Metal card that catches the light as it tilts |
+| `LogoLoop` | Seamless infinite marquee of logos or any widget |
+| `OrbitItems` | Items that orbit a center widget along a path |
+| `CardFlip` | 3D card flip |
+
+### Controls
+
+| Widget | What it does |
+| --- | --- |
+| `SquishSwitch` | Switch whose thumb stretches with speed and squashes at the end |
+| `RubberSegment` | Segmented control with a thumb that stretches like rubber |
+| `JellyRadioGroup` | Radio chips that swell and push their neighbours |
+| `SpringCheckbox` | Checkbox that fills, ticks and strikes through its label |
+| `PeekRating` | Star rating with a wave preview and a pop on commit |
+| `GlideSelect` | Select chip with a menu that pops from its corner |
+| `WakeSlider` | Slider made of bars that leaves a wake when dragged fast |
+| `CometDial` | Circular dial you turn by angle, with a comet streak |
+| `ScrubField` | Number field you drag to scrub, or tap to type |
+| `CodeSlots` | One-time code input with paste and SMS autofill |
+
+### Buttons
+
+| Widget | What it does |
+| --- | --- |
+| `PulseHeart` | Like button that pulses and rolls its count |
+| `FuseButton` | Action button with an undo window shown as a burning fuse |
+| `SlingButton` | Send button you pull back like a slingshot |
+| `BellToggle` | Notification toggle that rings its bell |
+| `HoldToConfirm` | Press and hold to fill a button and confirm |
+| `SlideToConfirm` | Slide a thumb across a track to confirm, with async support |
+| `ShimmerButton` | Call-to-action button with a shimmer sweep |
+| `ButtonStates` | Loading, success and error states for any button |
+| `TapFeedback` | Scale, bounce or fade feedback on tap |
+| `RippleEffect`, `RippleButton`, `WaterRipple` | Ripple animations |
+| `ShakeToAction`, `ShakeAnimation`, `ShakeButton` | Shake animations and gestures |
+
+### Menus, overlays and backgrounds
+
+| Widget | What it does |
+| --- | --- |
+| `WarmTooltip`, `WarmTooltipGroup` | Tooltips that glide between neighbours once one is open |
+| `BranchedMenu` | Collapsible navigation with branches and a traced selection |
+| `GradualBlur` | Progressive blur toward an edge of scrolling content |
+| `GrainOverlay` | Animated film grain over any widget |
+| `RevealOnScroll` | Animates a widget in when it scrolls into view |
+| `ExpandableFab` | Floating button that expands into a set of actions |
+| `LongPressMenu` | Context menu on long press |
+| `ToastNotification` | Toasts with swipe to dismiss and a countdown bar |
+
+### Lists, feedback and loading
+
+| Widget | What it does |
+| --- | --- |
 | `InputFocus` | Lift and scale effect when an input gains focus |
 | `FloatingLabel` | Text field with an animated floating label and validation |
-| `RippleEffect`, `RippleButton`, `WaterRipple` | Ripple animations |
 | `PullToRefresh` | Pull-to-refresh with Material or adaptive indicator |
 | `SwipeActions` | Swipe a list item to reveal tappable actions |
 | `MicroReorderableList` | Drag and drop reordering with a lift effect |
-| `LongPressMenu` | Context menu on long press |
 | `ParallaxScroll`, `ParallaxImage` | Parallax scrolling effects |
 | `ElasticScroll`, `ElasticListView`, `ElasticGridView` | Elastic overscroll |
-| `ShakeToAction`, `ShakeAnimation`, `ShakeButton` | Shake animations and gestures |
 | `MorphingShapes`, `ShapeMorph` | Smooth morphing between shapes |
 | `MicroPageRoute`, `MicroNavigator` | Page transitions (fade, slide, scale, flip, blur, and more) |
 | `LoadingSkeleton`, `TextSkeleton`, `CardSkeleton`, `ListItemSkeleton`, `GridItemSkeleton`, `SkeletonLoader` | Loading skeletons with shimmer |
-| `ToastNotification` | Animated toast notifications |
-| `CardFlip` | 3D card flip |
 | `SuccessBurst` | Particle burst for success confirmations |
 | `PulseHighlight` | Pulse rings that draw attention to a widget |
 | `AnimatedCounter` | Animated number changes, with an odometer mode |
 | `AnimatedBadge` | Count badge that bounces when the count changes |
 | `StaggeredList`, `StaggeredItem` | Staggered entrance animation for lists |
-| `ShimmerButton` | Call-to-action button with a shimmer sweep |
-| `SlideToConfirm` | Slide a thumb across a track to confirm an action |
-| `ExpandableFab` | Floating button that expands into a set of actions |
 | `AnimatedCheck` | Checkmark or cross drawn with an animated stroke |
-| `AnimatedGradientBorder` | Animated sweeping gradient border |
-| `TypewriterText` | Text that types itself out, with cursor and looping |
 | `LiquidProgress` | Progress indicator filled with an animated wave |
 
 ## Usage
+
+### AI and agents
+
+#### Border beam
+
+Wrap any card, button or input. Toggle `active` to fade the beam in when an
+agent starts working and out when it finishes:
+
+```dart
+BorderBeam(
+  active: isWorking,
+  child: Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Agent'))),
+);
+
+// A glow traveling along the bottom edge of a search bar
+BorderBeam(style: BorderBeamStyle.line, child: searchField);
+```
+
+Styles: `beam` (rotating arc, the default), `line` (bottom edge) and `pulse`
+(breathing colors along the whole border). Palettes: `colorful`, `ocean`,
+`sunset` and `mono`, or your own `colors`. The effect stays on the border;
+set `innerGlow: true` to add a soft light that fades inward from the edge.
+
+#### Thinking orb
+
+A small dotted orb that replaces a spinner. Pick the state that matches
+the work:
+
+```dart
+ThinkingOrb(state: ThinkingOrbState.searching);
+
+// Inline next to a label
+Row(children: [
+  ThinkingOrb(state: ThinkingOrbState.thinking, size: 20),
+  Text('Thinking...'),
+]);
+```
+
+States: `working`, `searching`, `solving`, `listening`, `connecting`,
+`weaving`, `composing`, `thinking` and `shaping`. Changing the state
+crossfades between orbs.
+
+#### Thinking steps
+
+A reasoning trace for agents. The header shows a live timer while
+`isThinking` is true, then reads "Thought for 12s" and collapses:
+
+```dart
+ThinkingSteps(
+  isThinking: !done,
+  steps: [
+    ThinkingStep(title: 'Reading the question', status: MicroStatus.success),
+    ThinkingStep(title: 'Searching the docs', detail: '3 sources', status: MicroStatus.loading),
+    ThinkingStep(title: 'Writing the answer'),
+  ],
+);
+```
+
+#### Streaming text
+
+Pass the text received so far and rebuild as tokens arrive. Only the new
+words animate:
+
+```dart
+StreamingText(
+  text: response,
+  isStreaming: !done,
+  showCursor: true,
+  effect: StreamingTextEffect.blur,
+);
+```
+
+#### Voice glow and waveform
+
+Both take a `level` from 0 to 1 that you compute from your own audio
+stack, either as a value or as a `ValueListenable<double>` to avoid
+rebuilding the parent on every sample:
+
+```dart
+VoiceGlow(
+  levelListenable: micLevel,
+  state: VoiceGlowState.listening, // idle, listening, processing, off
+  child: chatInput,
+);
+
+VoiceWaveform(levelListenable: micLevel);
+```
+
+#### Shimmer text, typing indicator and status mark
+
+```dart
+ShimmerText('Thinking...');
+ShimmerText.child(child: Icon(Icons.auto_awesome));
+
+TypingIndicator(style: TypingIndicatorStyle.wave);
+
+StatusMark(status: MicroStatus.loading); // idle, loading, success, error
+```
+
+#### Tool calls, loaders and image generation
+
+```dart
+ToolCallChip(label: 'Searching the web', icon: Icons.public, status: MicroStatus.loading);
+
+const LatticeLoader(label: 'Generating');
+
+RefineFrame.blurred(image: generatedImage, stage: step, steps: 4);
+
+VoicePill(recording: recording, onChanged: (v) => setState(() => recording = v), levelListenable: micLevel);
+```
+
+### Text effects
+
+```dart
+TextReveal(
+  text: 'Make every interaction feel alive',
+  splitBy: TextRevealSplit.words,
+  effect: TextRevealEffect.blur,
+);
+
+DecryptedText(text: 'Access granted', sequential: true);
+
+RotatingText(texts: ['faster', 'smoother', 'together']);
+
+GradientText('Gradient headline', style: TextStyle(fontSize: 32));
+```
+
+### Pointer and hover
+
+These follow the mouse, or the finger while it is down, and never block the
+taps of the widgets inside:
+
+```dart
+Magnet(child: FilledButton(onPressed: buy, child: Text('Buy')));
+
+SpotlightCard(child: Text('Move the pointer here'));
+
+TiltCard(child: Image.asset('card.png'));
+
+ClickSpark(child: FilledButton(onPressed: like, child: Text('Like')));
+```
+
+```dart
+GlareHover(child: productCard);
+
+HalftoneReveal(image: AssetImage('assets/photo.jpg'));
+
+PixelSwap(first: coverArt, second: trackList);
+
+PixelTransition(firstChild: front, secondChild: back);
+```
+
+### Borders and glow
+
+```dart
+CometBorder(child: card);
+ElectricBorder(color: const Color(0xFF5BC0FF), child: card);
+```
+
+Like `BorderBeam`, both stay on the border of the child. Pass a
+`borderRadius` that matches the child's shape.
+
+### Cards and carousels
+
+```dart
+DepthCarousel(loop: true, children: cards);
+
+MorphSlider(
+  images: [AssetImage('a.jpg'), AssetImage('b.jpg')],
+  effect: MorphEffect.melt, // melt, ripple or swirl
+);
+
+ReflectiveCard(finish: ReflectiveCardFinish.holographic, child: badge);
+
+LogoLoop(children: logos);
+
+OrbitItems(center: logo, children: avatars);
+```
+
+`MorphSlider` uses a fragment shader shipped with the package. Call
+`MorphSlider.precacheShader()` early so the first transition already uses it;
+when shaders are not available it falls back to a crossfade.
+
+### Controls
+
+All controls are controlled widgets: pass the value and update it in
+`onChanged`. They support keyboard focus and screen readers like their
+Material counterparts.
+
+```dart
+SquishSwitch(value: on, onChanged: (v) => setState(() => on = v));
+
+RubberSegment<String>(
+  value: range,
+  onChanged: (v) => setState(() => range = v),
+  items: const [
+    RubberSegmentItem(value: 'day', label: Text('Day')),
+    RubberSegmentItem(value: 'week', label: Text('Week')),
+  ],
+);
+
+SpringCheckbox(value: done, onChanged: (v) => setState(() => done = v!), label: Text('Water the plants'));
+
+PeekRating(value: rating, onChanged: (v) => setState(() => rating = v));
+
+WakeSlider(value: volume, onChanged: (v) => setState(() => volume = v));
+
+CodeSlots(length: 6, onCompleted: verify);
+```
+
+### Buttons
+
+```dart
+PulseHeart(liked: liked, count: likes, onChanged: toggleLike);
+
+FuseButton(
+  onPressed: hideItem,
+  onUndo: showItem,
+  onCommit: deleteItem,
+  doneChild: const Text('Deleted'),
+  child: const Text('Delete'),
+);
+
+SlingButton(onFired: send, child: const Icon(Icons.send_rounded));
+
+BellToggle(value: subscribed, onChanged: (v) => setState(() => subscribed = v));
+```
+
+### Menus, overlays and backgrounds
+
+```dart
+WarmTooltipGroup(
+  child: Row(children: [
+    WarmTooltip(message: 'Bold', child: boldButton),
+    WarmTooltip(message: 'Italic', child: italicButton),
+  ]),
+);
+
+GradualBlur(edge: GradualBlurEdge.bottom, child: feed);
+
+GrainOverlay(child: hero);
+
+RevealOnScroll(effect: RevealEffect.slideUp, child: section);
+```
 
 ### Tap feedback
 
@@ -103,6 +446,13 @@ ButtonStates(
     child: const Text('Submit'),
   ),
 );
+```
+
+Or let the controller run the whole flow. `run` shows loading, awaits the
+task, then shows success or error and returns to idle:
+
+```dart
+await controller.run(() => submitForm());
 ```
 
 You can pass your own `loadingBuilder`, `successBuilder`, and `errorBuilder`,
@@ -175,16 +525,13 @@ SwipeActions(
 
 ### Reorderable list
 
-Every child needs a key. The `onReorder` callback follows the standard Flutter convention:
+Every child needs a key. `onReorderItem` receives indexes that are already
+adjusted for the removed item:
 
 ```dart
 MicroReorderableList(
-  onReorder: (oldIndex, newIndex) {
-    setState(() {
-      if (oldIndex < newIndex) newIndex -= 1;
-      final item = items.removeAt(oldIndex);
-      items.insert(newIndex, item);
-    });
+  onReorderItem: (oldIndex, newIndex) {
+    setState(() => items.insert(newIndex, items.removeAt(oldIndex)));
   },
   children: [
     for (final item in items)
@@ -333,7 +680,8 @@ context.showToast(
 ```
 
 Toasts stack when several are visible, animate in and out, and are announced
-to screen readers.
+to screen readers. Users can swipe a toast away (`swipeToDismiss`), and
+`showProgress` draws a thin countdown bar that pauses on hover or press.
 
 ### Card flip
 
@@ -387,6 +735,9 @@ AnimatedCounter(value: total);
 
 // Odometer style: changed digits slide into place
 AnimatedCounter(value: total, mode: CounterAnimationMode.slideDigits);
+
+// Built-in formatting: $1,249.50
+AnimatedCounter(value: price, prefix: '\$', fractionDigits: 2, thousandsSeparator: ',');
 ```
 
 ### Animated badge
@@ -434,6 +785,29 @@ deletions. Screen reader and keyboard users can confirm directly:
 SlideToConfirm(
   label: 'Slide to pay',
   onConfirmed: processPayment,
+);
+```
+
+For async work, use `onConfirmAsync`. The thumb shows a spinner and the
+control stays locked until the `Future` completes. Errors spring the thumb
+back and go to `onError`:
+
+```dart
+SlideToConfirm(
+  label: 'Slide to publish',
+  onConfirmAsync: () => api.publish(),
+);
+```
+
+### Hold to confirm
+
+Press and hold to fill the button; releasing early drains it:
+
+```dart
+HoldToConfirm(
+  onConfirmed: deleteProject,
+  fillStyle: HoldFillStyle.liquid,
+  child: Text('Hold to delete'),
 );
 ```
 
@@ -524,6 +898,13 @@ The example app shows every widget in action:
 cd example
 flutter run
 ```
+
+## Credits
+
+`BorderBeam`, `ThinkingOrb` and `VoiceGlow` are Flutter ports of Border Beam,
+Thinking Orbs and Voice from [libraries.dev](https://libraries.dev) by
+Jakub Antalik, released under the MIT license (see THIRD_PARTY_NOTICES). Several text and
+pointer effects are inspired by [React Bits](https://reactbits.dev).
 
 ## License
 

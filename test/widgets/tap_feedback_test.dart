@@ -3,19 +3,21 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
   group('TapFeedback', () {
     testWidgets('renders its child', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(TapFeedback(child: Text('Tap me'))),
-      );
+      await tester.pumpWidget(_wrap(TapFeedback(child: Text('Tap me'))));
       expect(find.text('Tap me'), findsOneWidget);
     });
 
-    testWidgets('fires onTap immediately on tap-up', (WidgetTester tester) async {
+    testWidgets('fires onTap immediately on tap-up', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         _wrap(
@@ -33,8 +35,9 @@ void main() {
     });
 
     for (final TapAnimationType effect in TapAnimationType.values) {
-      testWidgets('effect $effect animates a press and release',
-          (WidgetTester tester) async {
+      testWidgets('effect $effect animates a press and release', (
+        WidgetTester tester,
+      ) async {
         await tester.pumpWidget(
           _wrap(
             TapFeedback(
@@ -45,8 +48,9 @@ void main() {
           ),
         );
 
-        final TestGesture gesture =
-            await tester.startGesture(tester.getCenter(find.text('Tap')));
+        final TestGesture gesture = await tester.startGesture(
+          tester.getCenter(find.text('Tap')),
+        );
         await tester.pump(const Duration(milliseconds: 80));
         await gesture.up();
         await tester.pumpAndSettle();
@@ -73,8 +77,9 @@ void main() {
       expect(find.text('both'), findsOneWidget);
     });
 
-    testWidgets('enabled false renders child and never fires onTap',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders child and never fires onTap', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         _wrap(
@@ -90,8 +95,9 @@ void main() {
       expect(tapped, isFalse);
     });
 
-    testWidgets('exposes button semantics with label',
-        (WidgetTester tester) async {
+    testWidgets('exposes button semantics with label', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           TapFeedback(
@@ -104,8 +110,9 @@ void main() {
       expect(find.bySemanticsLabel('Do it'), findsOneWidget);
     });
 
-    testWidgets('reduced motion: tap fires callback with no animations',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion: tap fires callback with no animations', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -115,8 +122,11 @@ void main() {
               body: Center(
                 child: TapFeedback(
                   onTap: () => tapped = true,
-                  child:
-                      const SizedBox(width: 100, height: 40, child: Text('Tap')),
+                  child: const SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: Text('Tap'),
+                  ),
                 ),
               ),
             ),
@@ -131,8 +141,9 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('disposal mid-animation does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-animation does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           TapFeedback(
@@ -142,8 +153,9 @@ void main() {
         ),
       );
 
-      final TestGesture gesture =
-          await tester.startGesture(tester.getCenter(find.text('Tap')));
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(find.text('Tap')),
+      );
       await tester.pump(const Duration(milliseconds: 50));
       // Replace the tree while the press animation is running.
       await tester.pumpWidget(Container());

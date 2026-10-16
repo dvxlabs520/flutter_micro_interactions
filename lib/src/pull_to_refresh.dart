@@ -30,9 +30,9 @@ class PullToRefresh extends StatelessWidget {
     this.notificationPredicate = defaultScrollNotificationPredicate,
     this.semanticsLabel,
     this.semanticsValue,
-  })  : assert(displacement >= 0.0, 'displacement must be non-negative'),
-        assert(strokeWidth > 0.0, 'strokeWidth must be positive'),
-        _adaptive = false;
+  }) : assert(displacement >= 0.0, 'displacement must be non-negative'),
+       assert(strokeWidth > 0.0, 'strokeWidth must be positive'),
+       _adaptive = false;
 
   /// Creates a pull-to-refresh wrapper whose indicator matches the platform.
   const PullToRefresh.adaptive({
@@ -48,9 +48,9 @@ class PullToRefresh extends StatelessWidget {
     this.notificationPredicate = defaultScrollNotificationPredicate,
     this.semanticsLabel,
     this.semanticsValue,
-  })  : assert(displacement >= 0.0, 'displacement must be non-negative'),
-        assert(strokeWidth > 0.0, 'strokeWidth must be positive'),
-        _adaptive = true;
+  }) : assert(displacement >= 0.0, 'displacement must be non-negative'),
+       assert(strokeWidth > 0.0, 'strokeWidth must be positive'),
+       _adaptive = true;
 
   /// The scrollable content to wrap.
   final Widget child;

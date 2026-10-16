@@ -3,7 +3,9 @@ import 'package:flutter_micro_interactions/src/pulse_highlight.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 Finder _ringLayer() {
@@ -15,11 +17,10 @@ Finder _ringLayer() {
 
 void main() {
   group('PulseHighlight', () {
-    testWidgets('renders its child and autoplays without settling',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(const PulseHighlight(child: Text('New'))),
-      );
+    testWidgets('renders its child and autoplays without settling', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const PulseHighlight(child: Text('New'))));
       expect(find.text('New'), findsOneWidget);
       expect(_ringLayer(), findsOneWidget);
 
@@ -32,8 +33,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('controller starts and stops the pulses',
-        (WidgetTester tester) async {
+    testWidgets('controller starts and stops the pulses', (
+      WidgetTester tester,
+    ) async {
       final PulseHighlightController controller = PulseHighlightController();
       addTearDown(controller.dispose);
 
@@ -64,8 +66,9 @@ void main() {
       expect(_ringLayer(), findsNothing);
     });
 
-    testWidgets('stops after maxPulseCount and reports each cycle',
-        (WidgetTester tester) async {
+    testWidgets('stops after maxPulseCount and reports each cycle', (
+      WidgetTester tester,
+    ) async {
       int cycles = 0;
       await tester.pumpWidget(
         _wrap(
@@ -89,8 +92,9 @@ void main() {
       expect(_ringLayer(), findsNothing);
     });
 
-    testWidgets('stopOnTap stops the pulses and syncs the controller',
-        (WidgetTester tester) async {
+    testWidgets('stopOnTap stops the pulses and syncs the controller', (
+      WidgetTester tester,
+    ) async {
       final PulseHighlightController controller = PulseHighlightController();
       addTearDown(controller.dispose);
 
@@ -113,6 +117,68 @@ void main() {
       expect(_ringLayer(), findsNothing);
     });
 
+    testWidgets('notifies controller listeners after maxPulseCount', (
+      WidgetTester tester,
+    ) async {
+      final PulseHighlightController controller = PulseHighlightController();
+      addTearDown(controller.dispose);
+      final List<bool> notified = <bool>[];
+      controller.addListener(() => notified.add(controller.isPulsing));
+
+      await tester.pumpWidget(
+        _wrap(
+          PulseHighlight(
+            controller: controller,
+            duration: const Duration(milliseconds: 200),
+            maxPulseCount: 1,
+            child: const SizedBox(width: 48, height: 48),
+          ),
+        ),
+      );
+      expect(controller.isPulsing, isTrue);
+
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump();
+      expect(controller.isPulsing, isFalse);
+      expect(notified, <bool>[false]);
+      expect(tester.hasRunningAnimations, isFalse);
+
+      // The controller can start it again after a self-stop.
+      controller.start();
+      await tester.pump();
+      expect(controller.isPulsing, isTrue);
+      expect(tester.hasRunningAnimations, isTrue);
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump();
+      expect(controller.isPulsing, isFalse);
+      expect(notified, <bool>[false, true, false]);
+    });
+
+    testWidgets('notifies controller listeners after a dismissing tap', (
+      WidgetTester tester,
+    ) async {
+      final PulseHighlightController controller = PulseHighlightController();
+      addTearDown(controller.dispose);
+      int notifications = 0;
+      controller.addListener(() => notifications++);
+
+      await tester.pumpWidget(
+        _wrap(
+          PulseHighlight(
+            controller: controller,
+            child: const SizedBox(width: 48, height: 48),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(notifications, 0);
+
+      await tester.tap(find.byType(PulseHighlight));
+      await tester.pump();
+      expect(controller.isPulsing, isFalse);
+      expect(notifications, 1);
+    });
+
     testWidgets('tap still reaches the child', (WidgetTester tester) async {
       bool childTapped = false;
       await tester.pumpWidget(
@@ -131,8 +197,9 @@ void main() {
       expect(childTapped, isTrue);
     });
 
-    testWidgets('enabled false renders the child only',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders the child only', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           const PulseHighlight(
@@ -175,8 +242,9 @@ void main() {
       expect(_ringLayer(), findsNothing);
     });
 
-    testWidgets('disposal mid-pulse does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-pulse does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(const PulseHighlight(child: SizedBox(width: 48, height: 48))),
       );

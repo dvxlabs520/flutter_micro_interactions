@@ -127,14 +127,22 @@ class _ShimmerButtonState extends State<ShimmerButton>
   @override
   void initState() {
     super.initState();
-    _sweepController =
-        AnimationController(vsync: this, duration: widget.shimmerDuration);
-    _pressController =
-        AnimationController(vsync: this, duration: widget.pressDuration);
-    _sweepAnimation =
-        CurvedAnimation(parent: _sweepController, curve: widget.curve);
-    _pressAnimation =
-        CurvedAnimation(parent: _pressController, curve: widget.curve);
+    _sweepController = AnimationController(
+      vsync: this,
+      duration: widget.shimmerDuration,
+    );
+    _pressController = AnimationController(
+      vsync: this,
+      duration: widget.pressDuration,
+    );
+    _sweepAnimation = CurvedAnimation(
+      parent: _sweepController,
+      curve: widget.curve,
+    );
+    _pressAnimation = CurvedAnimation(
+      parent: _pressController,
+      curve: widget.curve,
+    );
     _sweepController.addStatusListener(_onSweepStatus);
   }
 
@@ -157,10 +165,14 @@ class _ShimmerButtonState extends State<ShimmerButton>
     if (widget.curve != oldWidget.curve) {
       _sweepAnimation.dispose();
       _pressAnimation.dispose();
-      _sweepAnimation =
-          CurvedAnimation(parent: _sweepController, curve: widget.curve);
-      _pressAnimation =
-          CurvedAnimation(parent: _pressController, curve: widget.curve);
+      _sweepAnimation = CurvedAnimation(
+        parent: _sweepController,
+        curve: widget.curve,
+      );
+      _pressAnimation = CurvedAnimation(
+        parent: _pressController,
+        curve: widget.curve,
+      );
     }
     final bool wasInteractive =
         oldWidget.enabled && oldWidget.onPressed != null;
@@ -293,8 +305,7 @@ class _ShimmerButtonState extends State<ShimmerButton>
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final Color backgroundColor =
-        widget.backgroundColor ?? colorScheme.primary;
+    final Color backgroundColor = widget.backgroundColor ?? colorScheme.primary;
     final Color shimmerColor =
         widget.shimmerColor ?? colorScheme.onPrimary.withValues(alpha: 0.35);
     final bool interactive = _interactive;

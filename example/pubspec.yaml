@@ -1,10 +1,10 @@
 name: flutter_micro_interactions_example
-description: Example app for flutter_micro_interactions package
+description: Component gallery for the flutter_micro_interactions package.
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.11.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -12,11 +12,13 @@ dependencies:
   flutter_micro_interactions:
     path: ../
   cupertino_icons: ^1.0.2
+  google_fonts: ^8.2.1
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true 

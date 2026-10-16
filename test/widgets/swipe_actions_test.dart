@@ -27,8 +27,9 @@ void main() {
       expect(find.text('Row'), findsOneWidget);
     });
 
-    testWidgets('drag left reveals right actions and tapping one fires it',
-        (WidgetTester tester) async {
+    testWidgets('drag left reveals right actions and tapping one fires it', (
+      WidgetTester tester,
+    ) async {
       bool deleted = false;
       await tester.pumpWidget(
         _wrap(
@@ -51,7 +52,9 @@ void main() {
 
       // The action row is revealed to its full extent (25% of 800 = 200).
       final Size revealed = tester.getSize(
-        find.ancestor(of: find.text('Delete'), matching: find.byType(SizedBox)).first,
+        find
+            .ancestor(of: find.text('Delete'), matching: find.byType(SizedBox))
+            .first,
       );
       expect(revealed.width, moreOrLessEquals(200.0, epsilon: 1.0));
 
@@ -80,13 +83,16 @@ void main() {
       await tester.drag(find.text('Row'), const Offset(250, 0));
       await tester.pumpAndSettle();
       final Size revealed = tester.getSize(
-        find.ancestor(of: find.text('Archive'), matching: find.byType(SizedBox)).first,
+        find
+            .ancestor(of: find.text('Archive'), matching: find.byType(SizedBox))
+            .first,
       );
       expect(revealed.width, greaterThan(0));
     });
 
-    testWidgets('full swipe triggers the first action when enabled',
-        (WidgetTester tester) async {
+    testWidgets('full swipe triggers the first action when enabled', (
+      WidgetTester tester,
+    ) async {
       bool deleted = false;
       await tester.pumpWidget(
         _wrap(
@@ -110,8 +116,9 @@ void main() {
       expect(deleted, isTrue);
     });
 
-    testWidgets('enabled false renders the plain child',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders the plain child', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           SwipeActions(
@@ -130,8 +137,9 @@ void main() {
       expect(find.text('Delete'), findsNothing);
     });
 
-    testWidgets('disposal while the spring runs does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal while the spring runs does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           SwipeActions(
@@ -157,8 +165,9 @@ void main() {
   });
 
   group('MicroSwipeAction', () {
-    testWidgets('factory constructors read colors from the theme',
-        (WidgetTester tester) async {
+    testWidgets('factory constructors read colors from the theme', (
+      WidgetTester tester,
+    ) async {
       late MicroSwipeAction delete;
       late MicroSwipeAction archive;
       late MicroSwipeAction favorite;

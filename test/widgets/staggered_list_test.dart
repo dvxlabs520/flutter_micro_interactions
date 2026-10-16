@@ -17,8 +17,9 @@ double _opacityOf(WidgetTester tester, String text) {
 
 void main() {
   group('StaggeredList', () {
-    testWidgets('renders all children and finishes the entrance',
-        (WidgetTester tester) async {
+    testWidgets('renders all children and finishes the entrance', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           StaggeredList(
@@ -39,8 +40,9 @@ void main() {
       expect(_opacityOf(tester, 'Item 2'), 1.0);
     });
 
-    testWidgets('staggers items: later items start hidden',
-        (WidgetTester tester) async {
+    testWidgets('staggers items: later items start hidden', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           StaggeredList(
@@ -62,8 +64,9 @@ void main() {
       expect(_opacityOf(tester, 'Item 1'), 1.0);
     });
 
-    testWidgets('enabled false renders children in place instantly',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders children in place instantly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           StaggeredList(
@@ -77,8 +80,9 @@ void main() {
       expect(_opacityOf(tester, 'Item 1'), 1.0);
     });
 
-    testWidgets('reduced motion renders children in place instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion renders children in place instantly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
@@ -93,16 +97,15 @@ void main() {
       expect(_opacityOf(tester, 'Item 1'), 1.0);
     });
 
-    testWidgets('builder variant builds and animates lazy items',
-        (WidgetTester tester) async {
+    testWidgets('builder variant builds and animates lazy items', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           StaggeredList.builder(
             itemCount: 50,
-            itemBuilder: (BuildContext context, int index) => SizedBox(
-              height: 40,
-              child: Text('Item $index'),
-            ),
+            itemBuilder: (BuildContext context, int index) =>
+                SizedBox(height: 40, child: Text('Item $index')),
           ),
         ),
       );
@@ -115,67 +118,66 @@ void main() {
     });
 
     testWidgets(
-        'builder items entering the viewport later play a capped entrance',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(
-          StaggeredList.builder(
-            staggerDelay: const Duration(milliseconds: 100),
-            itemDuration: const Duration(milliseconds: 200),
-            itemCount: 50,
-            itemBuilder: (BuildContext context, int index) => SizedBox(
-              height: 100,
-              child: Text('Item $index'),
+      'builder items entering the viewport later play a capped entrance',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            StaggeredList.builder(
+              staggerDelay: const Duration(milliseconds: 100),
+              itemDuration: const Duration(milliseconds: 200),
+              itemCount: 50,
+              itemBuilder: (BuildContext context, int index) =>
+                  SizedBox(height: 100, child: Text('Item $index')),
             ),
           ),
+        );
+        await tester.pumpAndSettle();
+
+        // Scroll a deep item into view; its natural slot (index * delay) is
+        // long past, so its delay is capped at 3 * staggerDelay = 300ms.
+        await tester.drag(find.byType(ListView), const Offset(0, -2000));
+        await tester.pump();
+        expect(find.text('Item 25'), findsOneWidget);
+        expect(_opacityOf(tester, 'Item 25'), 0.0);
+
+        // Capped delay (300ms) plus the item duration (200ms) is enough.
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(_opacityOf(tester, 'Item 25'), 1.0);
+        await tester.pumpAndSettle();
+      },
+    );
+
+    testWidgets('animateOnlyOnce false replays when a new list is provided', (
+      WidgetTester tester,
+    ) async {
+      Widget build(List<Widget> children) => _wrap(
+        StaggeredList(
+          animateOnlyOnce: false,
+          staggerDelay: const Duration(milliseconds: 100),
+          children: children,
         ),
       );
-      await tester.pumpAndSettle();
 
-      // Scroll a deep item into view; its natural slot (index * delay) is
-      // long past, so its delay is capped at 3 * staggerDelay = 300ms.
-      await tester.drag(find.byType(ListView), const Offset(0, -2000));
-      await tester.pump();
-      expect(find.text('Item 25'), findsOneWidget);
-      expect(_opacityOf(tester, 'Item 25'), 0.0);
-
-      // Capped delay (300ms) plus the item duration (200ms) is enough.
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(_opacityOf(tester, 'Item 25'), 1.0);
-      await tester.pumpAndSettle();
-    });
-
-    testWidgets('animateOnlyOnce false replays when a new list is provided',
-        (WidgetTester tester) async {
-      Widget build(List<Widget> children) => _wrap(
-            StaggeredList(
-              animateOnlyOnce: false,
-              staggerDelay: const Duration(milliseconds: 100),
-              children: children,
-            ),
-          );
-
-      await tester.pumpWidget(build(const <Widget>[
-        Text('Item 0'),
-        Text('Item 1'),
-      ]));
+      await tester.pumpWidget(
+        build(const <Widget>[Text('Item 0'), Text('Item 1')]),
+      );
       await tester.pumpAndSettle();
       expect(_opacityOf(tester, 'Item 1'), 1.0);
 
       // A different list instance remounts the items and replays.
-      await tester.pumpWidget(build(<Widget>[
-        const Text('Item 0'),
-        const Text('Item 1'),
-      ]));
+      await tester.pumpWidget(
+        build(<Widget>[const Text('Item 0'), const Text('Item 1')]),
+      );
       await tester.pump();
       expect(_opacityOf(tester, 'Item 1'), 0.0);
       await tester.pumpAndSettle();
       expect(_opacityOf(tester, 'Item 1'), 1.0);
     });
 
-    testWidgets('animateOnlyOnce true does not replay on rebuild',
-        (WidgetTester tester) async {
+    testWidgets('animateOnlyOnce true does not replay on rebuild', (
+      WidgetTester tester,
+    ) async {
       Widget build(List<Widget> children) =>
           _wrap(StaggeredList(children: children));
 
@@ -186,8 +188,9 @@ void main() {
       expect(_opacityOf(tester, 'Item 0'), 1.0);
     });
 
-    testWidgets('cancels pending stagger timers on dispose',
-        (WidgetTester tester) async {
+    testWidgets('cancels pending stagger timers on dispose', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           StaggeredList(
@@ -204,8 +207,9 @@ void main() {
       expect(find.text('Item 0'), findsNothing);
     });
 
-    testWidgets('scroll direction, padding and shrinkWrap are forwarded',
-        (WidgetTester tester) async {
+    testWidgets('scroll direction, padding and shrinkWrap are forwarded', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           StaggeredList(
@@ -227,8 +231,9 @@ void main() {
   });
 
   group('StaggeredItem', () {
-    testWidgets('works standalone inside a Column',
-        (WidgetTester tester) async {
+    testWidgets('works standalone inside a Column', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           Column(
@@ -245,8 +250,9 @@ void main() {
       expect(_opacityOf(tester, 'B'), 1.0);
     });
 
-    testWidgets('supports every effect, including RTL slide directions',
-        (WidgetTester tester) async {
+    testWidgets('supports every effect, including RTL slide directions', (
+      WidgetTester tester,
+    ) async {
       for (final StaggerEffect effect in StaggerEffect.values) {
         for (final TextDirection direction in TextDirection.values) {
           await tester.pumpWidget(
@@ -263,8 +269,11 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('X'), findsOneWidget,
-              reason: '$effect in $direction');
+          expect(
+            find.text('X'),
+            findsOneWidget,
+            reason: '$effect in $direction',
+          );
         }
       }
     });

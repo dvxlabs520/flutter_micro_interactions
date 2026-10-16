@@ -8,7 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// so no timers or tickers leak.
 void main() {
   Widget wrap(Widget child) {
-    return MaterialApp(home: Scaffold(body: Center(child: child)));
+    return MaterialApp(
+      home: Scaffold(body: Center(child: child)),
+    );
   }
 
   Future<void> smoke(WidgetTester tester, Widget child) async {
@@ -41,8 +43,9 @@ void main() {
       await smoke(tester, InputFocus(child: TextField()));
     });
 
-    testWidgets('RippleEffect, RippleButton and WaterRipple',
-        (WidgetTester tester) async {
+    testWidgets('RippleEffect, RippleButton and WaterRipple', (
+      WidgetTester tester,
+    ) async {
       await smoke(
         tester,
         Column(
@@ -59,19 +62,14 @@ void main() {
       await smoke(tester, FloatingLabel(label: 'Label'));
     });
 
-    testWidgets('ElasticScroll, ElasticListView and ElasticGridView',
-        (WidgetTester tester) async {
+    testWidgets('ElasticScroll, ElasticListView and ElasticGridView', (
+      WidgetTester tester,
+    ) async {
       await smoke(tester, ElasticScroll(child: Container(height: 10)));
+      await smoke(tester, const ElasticListView(children: <Widget>[Text('x')]));
       await smoke(
         tester,
-        const ElasticListView(children: <Widget>[Text('x')]),
-      );
-      await smoke(
-        tester,
-        const ElasticGridView(
-          crossAxisCount: 2,
-          children: <Widget>[Text('x')],
-        ),
+        const ElasticGridView(crossAxisCount: 2, children: <Widget>[Text('x')]),
       );
     });
 
@@ -177,8 +175,9 @@ void main() {
       );
     });
 
-    testWidgets('MicroPageRoute via MicroNavigator',
-        (WidgetTester tester) async {
+    testWidgets('MicroPageRoute via MicroNavigator', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(wrap(const Text('Home')));
       MicroNavigator.push(
         tester.element(find.text('Home')),
@@ -190,7 +189,9 @@ void main() {
 
     testWidgets('ToastNotification', (WidgetTester tester) async {
       await tester.pumpWidget(wrap(const Text('Home')));
-      tester.element(find.text('Home')).showToast(
+      tester
+          .element(find.text('Home'))
+          .showToast(
             message: 'Toast',
             duration: const Duration(milliseconds: 100),
           );
@@ -201,8 +202,9 @@ void main() {
       expect(find.text('Toast'), findsNothing);
     });
 
-    testWidgets('ShakeToAction, ShakeAnimation and ShakeButton',
-        (WidgetTester tester) async {
+    testWidgets('ShakeToAction, ShakeAnimation and ShakeButton', (
+      WidgetTester tester,
+    ) async {
       await smoke(
         tester,
         Column(
@@ -248,13 +250,9 @@ void main() {
       );
     });
 
-    testWidgets('StaggeredList and StaggeredItem',
-        (WidgetTester tester) async {
+    testWidgets('StaggeredList and StaggeredItem', (WidgetTester tester) async {
       await smoke(tester, const StaggeredList(children: <Widget>[Text('x')]));
-      await smoke(
-        tester,
-        const StaggeredItem(index: 0, child: Text('y')),
-      );
+      await smoke(tester, const StaggeredItem(index: 0, child: Text('y')));
     });
 
     testWidgets('ShimmerButton', (WidgetTester tester) async {
@@ -277,7 +275,10 @@ void main() {
         tester,
         ExpandableFab(
           actions: <ExpandableFabAction>[
-            ExpandableFabAction(icon: const Icon(Icons.share), onPressed: () {}),
+            ExpandableFabAction(
+              icon: const Icon(Icons.share),
+              onPressed: () {},
+            ),
           ],
         ),
       );
@@ -298,10 +299,7 @@ void main() {
     });
 
     testWidgets('LiquidProgress', (WidgetTester tester) async {
-      await smoke(
-        tester,
-        const LiquidProgress(value: 0.5, animateWave: false),
-      );
+      await smoke(tester, const LiquidProgress(value: 0.5, animateWave: false));
     });
   });
 }

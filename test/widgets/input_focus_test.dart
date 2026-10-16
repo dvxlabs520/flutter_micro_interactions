@@ -3,31 +3,36 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 /// The wrapping [Material] that InputFocus animates elevation on.
 Material _emphasisMaterial(WidgetTester tester) {
   return tester.widget<Material>(
     find
-        .descendant(of: find.byType(InputFocus), matching: find.byType(Material))
+        .descendant(
+          of: find.byType(InputFocus),
+          matching: find.byType(Material),
+        )
         .first,
   );
 }
 
 void main() {
   group('InputFocus', () {
-    testWidgets('renders its child at rest with zero elevation',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(InputFocus(child: TextField())),
-      );
+    testWidgets('renders its child at rest with zero elevation', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(InputFocus(child: TextField())));
       expect(find.byType(TextField), findsOneWidget);
       expect(_emphasisMaterial(tester).elevation, 0.0);
     });
 
-    testWidgets('lifts on focus and settles back on unfocus',
-        (WidgetTester tester) async {
+    testWidgets('lifts on focus and settles back on unfocus', (
+      WidgetTester tester,
+    ) async {
       bool? focused;
       await tester.pumpWidget(
         _wrap(
@@ -50,8 +55,9 @@ void main() {
       expect(_emphasisMaterial(tester).elevation, moreOrLessEquals(0.0));
     });
 
-    testWidgets('InputFocus.animate builds the same widget',
-        (WidgetTester tester) async {
+    testWidgets('InputFocus.animate builds the same widget', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(InputFocus.animate(scale: 1.05, child: const TextField())),
       );
@@ -59,8 +65,9 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('enabled false renders the child unchanged',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders the child unchanged', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(InputFocus(enabled: false, child: const TextField())),
       );
@@ -73,8 +80,9 @@ void main() {
       expect(built, isA<TextField>());
     });
 
-    testWidgets('reduced motion applies the emphasis instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion applies the emphasis instantly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
@@ -94,11 +102,10 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('disposal mid-animation does not throw',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(InputFocus(child: TextField())),
-      );
+    testWidgets('disposal mid-animation does not throw', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(InputFocus(child: TextField())));
       await tester.tap(find.byType(TextField));
       await tester.pump(const Duration(milliseconds: 50));
 

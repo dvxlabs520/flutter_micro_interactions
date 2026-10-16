@@ -36,8 +36,8 @@ class InputFocus extends StatefulWidget {
     this.focusNode,
     this.onFocusChange,
     this.enabled = true,
-  })  : assert(scale > 0, 'scale must be positive'),
-        assert(elevation >= 0, 'elevation must not be negative');
+  }) : assert(scale > 0, 'scale must be positive'),
+       assert(elevation >= 0, 'elevation must not be negative');
 
   /// The widget to animate, typically a text field.
   final Widget child;
@@ -117,8 +117,10 @@ class _InputFocusState extends State<InputFocus>
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
     _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
-    _scaleAnimation =
-        Tween<double>(begin: 1.0, end: widget.scale).animate(_animation);
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: widget.scale,
+    ).animate(_animation);
   }
 
   @override
@@ -130,8 +132,10 @@ class _InputFocusState extends State<InputFocus>
     if (widget.curve != oldWidget.curve || widget.scale != oldWidget.scale) {
       _animation.dispose();
       _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
-      _scaleAnimation =
-          Tween<double>(begin: 1.0, end: widget.scale).animate(_animation);
+      _scaleAnimation = Tween<double>(
+        begin: 1.0,
+        end: widget.scale,
+      ).animate(_animation);
     }
     if (!widget.enabled && oldWidget.enabled) {
       _controller.value = 0.0;

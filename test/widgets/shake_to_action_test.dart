@@ -3,7 +3,9 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
@@ -15,8 +17,9 @@ void main() {
       expect(find.text('Shake me'), findsOneWidget);
     });
 
-    testWidgets('controller.shake fires onShake and plays the animation',
-        (WidgetTester tester) async {
+    testWidgets('controller.shake fires onShake and plays the animation', (
+      WidgetTester tester,
+    ) async {
       final ShakeController controller = ShakeController();
       addTearDown(controller.dispose);
       int shakes = 0;
@@ -37,8 +40,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('cooldown swallows rapid consecutive triggers',
-        (WidgetTester tester) async {
+    testWidgets('cooldown swallows rapid consecutive triggers', (
+      WidgetTester tester,
+    ) async {
       final ShakeController controller = ShakeController();
       addTearDown(controller.dispose);
       int shakes = 0;
@@ -59,8 +63,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('enabled false ignores controller triggers',
-        (WidgetTester tester) async {
+    testWidgets('enabled false ignores controller triggers', (
+      WidgetTester tester,
+    ) async {
       final ShakeController controller = ShakeController();
       addTearDown(controller.dispose);
       int shakes = 0;
@@ -78,8 +83,9 @@ void main() {
       expect(shakes, 0);
     });
 
-    testWidgets('reduced motion fires the callback without animating',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion fires the callback without animating', (
+      WidgetTester tester,
+    ) async {
       final ShakeController controller = ShakeController();
       addTearDown(controller.dispose);
       int shakes = 0;
@@ -105,8 +111,9 @@ void main() {
   });
 
   group('ShakeAnimation', () {
-    testWidgets('plays when the controller fires and disposes safely mid-run',
-        (WidgetTester tester) async {
+    testWidgets('plays when the controller fires and disposes safely mid-run', (
+      WidgetTester tester,
+    ) async {
       final ShakeController controller = ShakeController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -133,8 +140,9 @@ void main() {
   });
 
   group('ShakeButton', () {
-    testWidgets('valid press runs onPressed without shaking',
-        (WidgetTester tester) async {
+    testWidgets('valid press runs onPressed without shaking', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         _wrap(
@@ -142,9 +150,9 @@ void main() {
             onPressed: () => pressed = true,
             builder: (BuildContext context, VoidCallback handlePressed) =>
                 ElevatedButton(
-              onPressed: handlePressed,
-              child: const Text('Submit'),
-            ),
+                  onPressed: handlePressed,
+                  child: const Text('Submit'),
+                ),
           ),
         ),
       );
@@ -155,8 +163,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('invalid press shakes and runs onInvalidPress',
-        (WidgetTester tester) async {
+    testWidgets('invalid press shakes and runs onInvalidPress', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       bool invalid = false;
       await tester.pumpWidget(
@@ -167,9 +176,9 @@ void main() {
             onInvalidPress: () => invalid = true,
             builder: (BuildContext context, VoidCallback handlePressed) =>
                 ElevatedButton(
-              onPressed: handlePressed,
-              child: const Text('Submit'),
-            ),
+                  onPressed: handlePressed,
+                  child: const Text('Submit'),
+                ),
           ),
         ),
       );

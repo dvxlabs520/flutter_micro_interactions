@@ -2,14 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// The render object that paints the waves of the only [WaterRipple].
+RenderObject _wavePainter(WidgetTester tester) {
+  return tester.renderObject(
+    find.descendant(
+      of: find.byType(WaterRipple),
+      matching: find.byType(CustomPaint),
+    ),
+  );
+}
+
+/// The colored surface of the only [RippleButton].
+Finder _buttonSurface() {
+  return find.descendant(
+    of: find.byType(RippleButton),
+    matching: find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is DecoratedBox &&
+          (widget.decoration as BoxDecoration).color == Colors.green,
+    ),
+  );
+}
+
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
   group('RippleEffect', () {
-    testWidgets('renders its child and fires onTap',
-        (WidgetTester tester) async {
+    testWidgets('renders its child and fires onTap', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         _wrap(
@@ -26,8 +51,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('paints a ripple on tap and removes it when finished',
-        (WidgetTester tester) async {
+    testWidgets('paints a ripple on tap and removes it when finished', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           RippleEffect(
@@ -64,8 +90,9 @@ void main() {
       );
     });
 
-    testWidgets('enabled false renders child and does not fire onTap',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders child and does not fire onTap', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         _wrap(
@@ -80,8 +107,9 @@ void main() {
       expect(tapped, isFalse);
     });
 
-    testWidgets('reduced motion: no ripples but onTap still fires',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion: no ripples but onTap still fires', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
       await tester.pumpWidget(
         MaterialApp(
@@ -110,8 +138,29 @@ void main() {
       );
     });
 
-    testWidgets('disposal mid-ripple does not throw',
-        (WidgetTester tester) async {
+    testWidgets('lays the child out as if it were not wrapped', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          SizedBox(
+            width: 300,
+            height: 80,
+            child: RippleEffect(
+              child: Container(key: const Key('fill'), color: Colors.green),
+            ),
+          ),
+        ),
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('fill'))),
+        const Size(300, 80),
+      );
+    });
+
+    testWidgets('disposal mid-ripple does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(RippleEffect(child: SizedBox(width: 200, height: 80))),
       );
@@ -142,11 +191,75 @@ void main() {
       expect(tapped, isTrue);
       await tester.pumpAndSettle();
     });
+
+    testWidgets('fills the width it is given', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          SizedBox(
+            width: 300,
+            child: RippleButton(
+              onTap: () {},
+              backgroundColor: Colors.green,
+              child: const Text('Wide'),
+            ),
+          ),
+        ),
+      );
+      expect(tester.getSize(_buttonSurface()).width, 300);
+      expect(tester.getSize(find.byType(RippleButton)).width, 300);
+      // The label is centered on the stretched surface.
+      expect(
+        tester.getCenter(find.text('Wide')).dx,
+        closeTo(tester.getCenter(_buttonSurface()).dx, 0.5),
+      );
+    });
+
+    testWidgets('stretches inside a stretch Column', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 320,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  RippleButton(
+                    onTap: () {},
+                    backgroundColor: Colors.green,
+                    child: const Text('Stretch'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.getSize(_buttonSurface()).width, 320);
+    });
+
+    testWidgets('keeps its intrinsic width under loose constraints', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          RippleButton(
+            onTap: () {},
+            backgroundColor: Colors.green,
+            child: const SizedBox(width: 50, height: 10),
+          ),
+        ),
+      );
+      // 50 plus the default 16 pixel padding on both sides.
+      expect(tester.getSize(_buttonSurface()), const Size(82, 42));
+    });
   });
 
   group('WaterRipple', () {
-    testWidgets('renders child and loops without settling',
-        (WidgetTester tester) async {
+    testWidgets('renders child and loops without settling', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(WaterRipple(child: Icon(Icons.mic, size: 48))),
       );
@@ -162,8 +275,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('controller starts and stops the waves',
-        (WidgetTester tester) async {
+    testWidgets('controller starts and stops the waves', (
+      WidgetTester tester,
+    ) async {
       final WaterRippleController controller = WaterRippleController();
       addTearDown(controller.dispose);
 
@@ -202,6 +316,70 @@ void main() {
         ),
       );
       await tester.pump(const Duration(milliseconds: 300));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('paints no waves while not playing', (
+      WidgetTester tester,
+    ) async {
+      final WaterRippleController controller = WaterRippleController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        _wrap(
+          WaterRipple(
+            autoPlay: false,
+            controller: controller,
+            child: const SizedBox.square(dimension: 100),
+          ),
+        ),
+      );
+      // Never started: only the child.
+      expect(_wavePainter(tester), paintsNothing);
+
+      controller.start();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_wavePainter(tester), paints..circle());
+
+      // Stopped mid-wave: the rings disappear instead of freezing.
+      controller.stop();
+      await tester.pump();
+      expect(_wavePainter(tester), paintsNothing);
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('autoPlay false without a controller paints no waves', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          const WaterRipple(
+            autoPlay: false,
+            child: SizedBox.square(dimension: 100),
+          ),
+        ),
+      );
+      expect(_wavePainter(tester), paintsNothing);
+    });
+
+    testWidgets('reduced motion while playing shows static rings', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: Center(
+                child: WaterRipple(
+                  child: const SizedBox.square(dimension: 100),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(_wavePainter(tester), paints..circle());
       expect(tester.hasRunningAnimations, isFalse);
     });
   });

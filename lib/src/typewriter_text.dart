@@ -247,7 +247,10 @@ class _TypewriterTextState extends State<TypewriterText> {
   @override
   void initState() {
     super.initState();
-    assert(widget.strings.isNotEmpty, 'TypewriterText.strings must not be empty');
+    assert(
+      widget.strings.isNotEmpty,
+      'TypewriterText.strings must not be empty',
+    );
     _loadString();
     _seenResetCount = widget.controller?._resetCount ?? 0;
     _playing = widget.controller?._playRequested ?? widget.autoPlay;
@@ -496,11 +499,14 @@ class _TypewriterTextState extends State<TypewriterText> {
   Widget build(BuildContext context) {
     if (widget.strings.isEmpty) return const SizedBox.shrink();
     final String target = widget.strings[_stringIndex];
-    final String visible =
-        _graphemes.take(_visibleCount.clamp(0, _graphemes.length)).join();
-    final TextStyle base =
-        DefaultTextStyle.of(context).style.merge(widget.style);
-    final Color cursorColor = widget.cursorColor ??
+    final String visible = _graphemes
+        .take(_visibleCount.clamp(0, _graphemes.length))
+        .join();
+    final TextStyle base = DefaultTextStyle.of(
+      context,
+    ).style.merge(widget.style);
+    final Color cursorColor =
+        widget.cursorColor ??
         widget.style?.color ??
         Theme.of(context).colorScheme.primary;
 

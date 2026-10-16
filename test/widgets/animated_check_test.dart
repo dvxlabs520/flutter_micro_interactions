@@ -15,8 +15,9 @@ Widget _wrap(Widget child, {bool reducedMotion = false}) {
 
 void main() {
   group('AnimatedCheck', () {
-    testWidgets('renders a CustomPaint of the requested size',
-        (WidgetTester tester) async {
+    testWidgets('renders a CustomPaint of the requested size', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_wrap(const AnimatedCheck(size: 64)));
       final Finder paint = find.descendant(
         of: find.byType(AnimatedCheck),
@@ -26,8 +27,9 @@ void main() {
       expect(tester.getSize(paint), const Size(64, 64));
     });
 
-    testWidgets('autoPlay completes and fires onCompleted exactly once',
-        (WidgetTester tester) async {
+    testWidgets('autoPlay completes and fires onCompleted exactly once', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       await tester.pumpWidget(
         _wrap(AnimatedCheck(onCompleted: () => completed++)),
@@ -44,8 +46,9 @@ void main() {
       expect(completed, 1);
     });
 
-    testWidgets('autoPlay false stays blank until controller.play',
-        (WidgetTester tester) async {
+    testWidgets('autoPlay false stays blank until controller.play', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       final AnimatedCheckController controller = AnimatedCheckController();
       addTearDown(controller.dispose);
@@ -69,17 +72,15 @@ void main() {
       expect(controller.isComplete, isTrue);
     });
 
-    testWidgets('controller.reset clears and play replays',
-        (WidgetTester tester) async {
+    testWidgets('controller.reset clears and play replays', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       final AnimatedCheckController controller = AnimatedCheckController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
         _wrap(
-          AnimatedCheck(
-            controller: controller,
-            onCompleted: () => completed++,
-          ),
+          AnimatedCheck(controller: controller, onCompleted: () => completed++),
         ),
       );
       await tester.pump();
@@ -104,10 +105,7 @@ void main() {
       addTearDown(controller.dispose);
       await tester.pumpWidget(
         _wrap(
-          AnimatedCheck(
-            controller: controller,
-            onCompleted: () => completed++,
-          ),
+          AnimatedCheck(controller: controller, onCompleted: () => completed++),
         ),
       );
       await tester.pump();
@@ -131,8 +129,9 @@ void main() {
       expect(controller.isComplete, isTrue);
     });
 
-    testWidgets('type switch mid-animation restarts cleanly',
-        (WidgetTester tester) async {
+    testWidgets('type switch mid-animation restarts cleanly', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       await tester.pumpWidget(
         _wrap(AnimatedCheck(onCompleted: () => completed++)),
@@ -152,17 +151,15 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('reduced motion completes instantly and fires onCompleted',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion completes instantly and fires onCompleted', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       final AnimatedCheckController controller = AnimatedCheckController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
         _wrap(
-          AnimatedCheck(
-            controller: controller,
-            onCompleted: () => completed++,
-          ),
+          AnimatedCheck(controller: controller, onCompleted: () => completed++),
           reducedMotion: true,
         ),
       );
@@ -177,8 +174,9 @@ void main() {
       expect(completed, 2);
     });
 
-    testWidgets('disposal mid-animation throws nothing',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-animation throws nothing', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_wrap(const AnimatedCheck()));
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpWidget(const MaterialApp(home: SizedBox()));
@@ -186,8 +184,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('enabled false renders statically and ignores commands',
-        (WidgetTester tester) async {
+    testWidgets('enabled false renders statically and ignores commands', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       final AnimatedCheckController controller = AnimatedCheckController();
       addTearDown(controller.dispose);
@@ -208,8 +207,9 @@ void main() {
       expect(controller.isComplete, isFalse);
     });
 
-    testWidgets('exposes the semantic label once complete',
-        (WidgetTester tester) async {
+    testWidgets('exposes the semantic label once complete', (
+      WidgetTester tester,
+    ) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       await tester.pumpWidget(_wrap(const AnimatedCheck()));
       await tester.pump();
@@ -220,8 +220,9 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('cross defaults to the Error label',
-        (WidgetTester tester) async {
+    testWidgets('cross defaults to the Error label', (
+      WidgetTester tester,
+    ) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       await tester.pumpWidget(
         _wrap(const AnimatedCheck(type: AnimatedCheckType.cross)),
@@ -232,8 +233,9 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('didUpdateWidget applies duration, curve and controller swap',
-        (WidgetTester tester) async {
+    testWidgets('didUpdateWidget applies duration, curve and controller swap', (
+      WidgetTester tester,
+    ) async {
       int completed = 0;
       final AnimatedCheckController first = AnimatedCheckController();
       final AnimatedCheckController second = AnimatedCheckController();

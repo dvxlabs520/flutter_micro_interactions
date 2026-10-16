@@ -269,8 +269,10 @@ class _ExpandableFabState extends State<ExpandableFab>
     super.initState();
     _controller = AnimationController(vsync: this, duration: _totalDuration);
     _controller.addStatusListener(_handleStatus);
-    _iconAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _iconAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
     _rebuildItemAnimations();
     widget.controller?.addListener(_handleControllerChanged);
     if (widget.controller?.isOpen ?? false) {
@@ -338,7 +340,8 @@ class _ExpandableFabState extends State<ExpandableFab>
       double end = 1.0;
       if (totalUs > 0) {
         begin = widget.staggerDelay.inMicroseconds * index / totalUs;
-        end = (widget.staggerDelay.inMicroseconds * index +
+        end =
+            (widget.staggerDelay.inMicroseconds * index +
                 widget.duration.inMicroseconds) /
             totalUs;
       }
@@ -515,7 +518,11 @@ class _ExpandableFabState extends State<ExpandableFab>
   }
 
   Widget _buildAction(
-      BuildContext context, int index, Offset center, double boxWidth) {
+    BuildContext context,
+    int index,
+    Offset center,
+    double boxWidth,
+  ) {
     final ExpandableFabAction action = widget.actions[index];
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color background =
@@ -565,14 +572,12 @@ class _ExpandableFabState extends State<ExpandableFab>
               elevation: 2,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text(
                   label,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelMedium
-                      ?.copyWith(color: scheme.onSurface),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: scheme.onSurface),
                 ),
               ),
             ),

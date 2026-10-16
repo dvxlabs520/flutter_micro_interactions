@@ -63,9 +63,9 @@ class ShakeToAction extends StatefulWidget {
     this.intensity = 8.0,
     this.enableHaptics = true,
     this.enabled = true,
-  })  : assert(requiredReversals > 0, 'requiredReversals must be positive'),
-        assert(velocityThreshold > 0, 'velocityThreshold must be positive'),
-        assert(intensity >= 0, 'intensity must not be negative');
+  }) : assert(requiredReversals > 0, 'requiredReversals must be positive'),
+       assert(velocityThreshold > 0, 'velocityThreshold must be positive'),
+       assert(intensity >= 0, 'intensity must not be negative');
 
   /// The widget the gesture is detected on.
   final Widget child;
@@ -167,8 +167,7 @@ class _ShakeToActionState extends State<ShakeToAction>
     if (_lastMoveTime != null) {
       final int elapsedMicros = now.difference(_lastMoveTime!).inMicroseconds;
       if (elapsedMicros > 0) {
-        speed = dx.abs() /
-            (elapsedMicros / Duration.microsecondsPerSecond);
+        speed = dx.abs() / (elapsedMicros / Duration.microsecondsPerSecond);
       }
     }
     _lastMoveTime = now;
@@ -180,7 +179,8 @@ class _ShakeToActionState extends State<ShakeToAction>
     if (reversed && speed >= widget.velocityThreshold) {
       _reversalTimes.add(now);
       _reversalTimes.removeWhere(
-          (DateTime t) => now.difference(t) > widget.detectionWindow);
+        (DateTime t) => now.difference(t) > widget.detectionWindow,
+      );
       if (_reversalTimes.length >= widget.requiredReversals) {
         _reversalTimes.clear();
         _trigger();
@@ -248,10 +248,7 @@ class _ShakeTransform extends StatelessWidget {
         final double t = animation.value;
         // Damped sine: fast oscillation that dies out towards the end.
         final double offset = math.sin(t * math.pi * 6) * intensity * (1 - t);
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(offset, 0), child: child);
       },
     );
   }
@@ -390,7 +387,7 @@ class ShakeButton extends StatefulWidget {
   /// Builds the button. The provided callback must be used as the button's
   /// press handler so the shake logic can run.
   final Widget Function(BuildContext context, VoidCallback handlePressed)
-      builder;
+  builder;
 
   /// Called when the button is pressed while [isValid] is `true`.
   final VoidCallback? onPressed;

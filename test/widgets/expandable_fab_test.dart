@@ -7,10 +7,7 @@ Widget _wrap(Widget fab, {bool reducedMotion = false}) {
   return MaterialApp(
     home: MediaQuery(
       data: MediaQueryData(disableAnimations: reducedMotion),
-      child: Scaffold(
-        body: const SizedBox.expand(),
-        floatingActionButton: fab,
-      ),
+      child: Scaffold(body: const SizedBox.expand(), floatingActionButton: fab),
     ),
   );
 }
@@ -31,10 +28,7 @@ List<ExpandableFabAction> _actions({
       label: 'Share',
       onPressed: onShare,
     ),
-    ExpandableFabAction(
-      icon: const Icon(Icons.delete),
-      onPressed: onDelete,
-    ),
+    ExpandableFabAction(icon: const Icon(Icons.delete), onPressed: onDelete),
   ];
 }
 
@@ -42,8 +36,9 @@ Finder _fab() => find.byType(ExpandableFab);
 
 void main() {
   group('ExpandableFab', () {
-    testWidgets('opens on tap and shows all actions',
-        (WidgetTester tester) async {
+    testWidgets('opens on tap and shows all actions', (
+      WidgetTester tester,
+    ) async {
       final List<bool> toggles = <bool>[];
       await tester.pumpWidget(
         _wrap(ExpandableFab(actions: _actions(), onToggle: toggles.add)),
@@ -65,8 +60,9 @@ void main() {
       expect(toggles, <bool>[true, false]);
     });
 
-    testWidgets('action tap fires its callback and closes the fab',
-        (WidgetTester tester) async {
+    testWidgets('action tap fires its callback and closes the fab', (
+      WidgetTester tester,
+    ) async {
       bool edited = false;
       await tester.pumpWidget(
         _wrap(ExpandableFab(actions: _actions(onEdit: () => edited = true))),
@@ -80,8 +76,9 @@ void main() {
       expect(find.byIcon(Icons.edit), findsNothing);
     });
 
-    testWidgets('closeOnAction false keeps the fab open',
-        (WidgetTester tester) async {
+    testWidgets('closeOnAction false keeps the fab open', (
+      WidgetTester tester,
+    ) async {
       bool shared = false;
       await tester.pumpWidget(
         _wrap(
@@ -100,8 +97,9 @@ void main() {
       expect(find.byIcon(Icons.share), findsOneWidget);
     });
 
-    testWidgets('controller open, close, toggle and isOpen stay in sync',
-        (WidgetTester tester) async {
+    testWidgets('controller open, close, toggle and isOpen stay in sync', (
+      WidgetTester tester,
+    ) async {
       final ExpandableFabController controller = ExpandableFabController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -141,12 +139,11 @@ void main() {
       expect(find.byIcon(Icons.edit), findsNothing);
     });
 
-    testWidgets('closeOnTapOutside false keeps the fab open',
-        (WidgetTester tester) async {
+    testWidgets('closeOnTapOutside false keeps the fab open', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        _wrap(
-          ExpandableFab(actions: _actions(), closeOnTapOutside: false),
-        ),
+        _wrap(ExpandableFab(actions: _actions(), closeOnTapOutside: false)),
       );
       await tester.tap(_fab());
       await tester.pumpAndSettle();
@@ -167,8 +164,9 @@ void main() {
       expect(find.byIcon(Icons.edit), findsNothing);
     });
 
-    testWidgets('rapid toggle spam ends in a consistent state',
-        (WidgetTester tester) async {
+    testWidgets('rapid toggle spam ends in a consistent state', (
+      WidgetTester tester,
+    ) async {
       final ExpandableFabController controller = ExpandableFabController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -192,8 +190,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('interleaved controller and tap commands stay consistent',
-        (WidgetTester tester) async {
+    testWidgets('interleaved controller and tap commands stay consistent', (
+      WidgetTester tester,
+    ) async {
       final ExpandableFabController controller = ExpandableFabController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -210,8 +209,9 @@ void main() {
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });
 
-    testWidgets('enabled false cannot open, by tap or controller',
-        (WidgetTester tester) async {
+    testWidgets('enabled false cannot open, by tap or controller', (
+      WidgetTester tester,
+    ) async {
       final ExpandableFabController controller = ExpandableFabController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -234,8 +234,9 @@ void main() {
       expect(find.byIcon(Icons.edit), findsNothing);
     });
 
-    testWidgets('turning enabled off while open closes the fab',
-        (WidgetTester tester) async {
+    testWidgets('turning enabled off while open closes the fab', (
+      WidgetTester tester,
+    ) async {
       final ExpandableFabController controller = ExpandableFabController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -259,8 +260,9 @@ void main() {
       expect(find.byIcon(Icons.edit), findsNothing);
     });
 
-    testWidgets('reduced motion opens and closes instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion opens and closes instantly', (
+      WidgetTester tester,
+    ) async {
       final ExpandableFabController controller = ExpandableFabController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
@@ -291,8 +293,9 @@ void main() {
       expect(find.byIcon(Icons.share), findsOneWidget);
     });
 
-    testWidgets('radial direction shows all actions',
-        (WidgetTester tester) async {
+    testWidgets('radial direction shows all actions', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ExpandableFab(
@@ -322,8 +325,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('disposal while open throws nothing and cleans the overlay',
-        (WidgetTester tester) async {
+    testWidgets('disposal while open throws nothing and cleans the overlay', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_wrap(ExpandableFab(actions: _actions())));
       await tester.tap(_fab());
       // Dispose mid-open-animation.
@@ -339,8 +343,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('changing timing parameters while open is safe',
-        (WidgetTester tester) async {
+    testWidgets('changing timing parameters while open is safe', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_wrap(ExpandableFab(actions: _actions())));
       await tester.tap(_fab());
       await tester.pump(const Duration(milliseconds: 50));

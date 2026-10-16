@@ -27,8 +27,9 @@ double _painterProgress(WidgetTester tester) {
 
 void main() {
   group('AnimatedGradientBorder', () {
-    testWidgets('renders its child inside the border',
-        (WidgetTester tester) async {
+    testWidgets('renders its child inside the border', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(const AnimatedGradientBorder(child: Text('Featured'))),
       );
@@ -43,8 +44,9 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('autoPlay animates the painter progress',
-        (WidgetTester tester) async {
+    testWidgets('autoPlay animates the painter progress', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           const AnimatedGradientBorder(
@@ -67,8 +69,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('controller start and stop control the sweep',
-        (WidgetTester tester) async {
+    testWidgets('controller start and stop control the sweep', (
+      WidgetTester tester,
+    ) async {
       final AnimatedGradientBorderController controller =
           AnimatedGradientBorderController();
       addTearDown(controller.dispose);
@@ -95,7 +98,67 @@ void main() {
       await tester.pump();
       expect(controller.isPlaying, isFalse);
       expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('controller stop pauses the sweep in place and start resumes', (
+      WidgetTester tester,
+    ) async {
+      final AnimatedGradientBorderController controller =
+          AnimatedGradientBorderController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        _wrap(
+          AnimatedGradientBorder(
+            autoPlay: false,
+            controller: controller,
+            duration: const Duration(milliseconds: 1000),
+            child: const SizedBox(width: 80, height: 40),
+          ),
+        ),
+      );
+      controller.start();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      final double paused = _painterProgress(tester);
+      expect(paused, closeTo(0.4, 0.001));
+
+      controller.stop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      // No snap back to angle 0: the sweep holds its current angle.
+      expect(_painterProgress(tester), paused);
+      expect(tester.hasRunningAnimations, isFalse);
+
+      controller.start();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_painterProgress(tester), closeTo(0.5, 0.001));
+
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('enabled false shows the rest frame even after a pause', (
+      WidgetTester tester,
+    ) async {
+      Widget build({required bool enabled}) {
+        return _wrap(
+          AnimatedGradientBorder(
+            enabled: enabled,
+            duration: const Duration(milliseconds: 1000),
+            child: const SizedBox(width: 80, height: 40),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(build(enabled: true));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_painterProgress(tester), greaterThan(0.0));
+
+      await tester.pumpWidget(build(enabled: false));
       expect(_painterProgress(tester), 0.0);
+      expect(tester.hasRunningAnimations, isFalse);
     });
 
     testWidgets('enabled false never animates', (WidgetTester tester) async {
@@ -112,8 +175,9 @@ void main() {
       expect(find.byType(AnimatedGradientBorder), findsOneWidget);
     });
 
-    testWidgets('reduced motion renders a static border without tickers',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion renders a static border without tickers', (
+      WidgetTester tester,
+    ) async {
       final AnimatedGradientBorderController controller =
           AnimatedGradientBorderController();
       addTearDown(controller.dispose);
@@ -139,8 +203,9 @@ void main() {
       expect(_painterProgress(tester), 0.0);
     });
 
-    testWidgets('parameter changes mid-animation are safe',
-        (WidgetTester tester) async {
+    testWidgets('parameter changes mid-animation are safe', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           const AnimatedGradientBorder(
@@ -171,8 +236,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('swapping controllers detaches the old one cleanly',
-        (WidgetTester tester) async {
+    testWidgets('swapping controllers detaches the old one cleanly', (
+      WidgetTester tester,
+    ) async {
       final AnimatedGradientBorderController a =
           AnimatedGradientBorderController();
       final AnimatedGradientBorderController b =
@@ -213,13 +279,12 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('disposal mid-animation does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-animation does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
-          const AnimatedGradientBorder(
-            child: SizedBox(width: 80, height: 40),
-          ),
+          const AnimatedGradientBorder(child: SizedBox(width: 80, height: 40)),
         ),
       );
       await tester.pump(const Duration(milliseconds: 300));

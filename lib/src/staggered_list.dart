@@ -66,8 +66,8 @@ class StaggeredItem extends StatefulWidget {
     this.slideOffset = 24.0,
     this.maxDelay,
     this.enabled = true,
-  })  : assert(index >= 0, 'index must not be negative'),
-        assert(slideOffset >= 0, 'slideOffset must not be negative');
+  }) : assert(index >= 0, 'index must not be negative'),
+       assert(slideOffset >= 0, 'slideOffset must not be negative');
 
   /// The widget below this widget in the tree.
   final Widget child;
@@ -128,8 +128,10 @@ class _StaggeredItemState extends State<StaggeredItem>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: widget.itemDuration);
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.itemDuration,
+    );
     _animation = CurvedAnimation(parent: _controller, curve: widget.curve);
   }
 
@@ -230,10 +232,7 @@ class _StaggeredItemState extends State<StaggeredItem>
         child: child,
         builder: (BuildContext context, Widget? child) {
           final double remaining = 1.0 - _animation.value;
-          return Transform.translate(
-            offset: begin * remaining,
-            child: child,
-          );
+          return Transform.translate(offset: begin * remaining, child: child);
         },
       );
     }
@@ -289,9 +288,9 @@ class StaggeredList extends StatefulWidget {
     this.physics,
     this.scrollDirection = Axis.vertical,
     this.enabled = true,
-  })  : assert(slideOffset >= 0, 'slideOffset must not be negative'),
-        itemBuilder = null,
-        itemCount = null;
+  }) : assert(slideOffset >= 0, 'slideOffset must not be negative'),
+       itemBuilder = null,
+       itemCount = null;
 
   /// Creates a staggered list that builds items lazily, like
   /// [ListView.builder].
@@ -311,9 +310,9 @@ class StaggeredList extends StatefulWidget {
     this.physics,
     this.scrollDirection = Axis.vertical,
     this.enabled = true,
-  })  : assert(itemCount >= 0, 'itemCount must not be negative'),
-        assert(slideOffset >= 0, 'slideOffset must not be negative'),
-        children = null;
+  }) : assert(itemCount >= 0, 'itemCount must not be negative'),
+       assert(slideOffset >= 0, 'slideOffset must not be negative'),
+       children = null;
 
   /// The items of the list. Null when [StaggeredList.builder] is used.
   final List<Widget>? children;
@@ -396,7 +395,8 @@ class _StaggeredListState extends State<StaggeredList> {
     if (widget.animateOnlyOnce) {
       return;
     }
-    final bool childrenReplaced = widget.children != null &&
+    final bool childrenReplaced =
+        widget.children != null &&
         !identical(widget.children, oldWidget.children);
     final bool countChanged =
         widget.itemCount != null && widget.itemCount != oldWidget.itemCount;
@@ -420,8 +420,9 @@ class _StaggeredListState extends State<StaggeredList> {
       curve: widget.curve,
       effect: widget.effect,
       slideOffset: widget.slideOffset,
-      maxDelay:
-          _initialFrameDone ? widget.staggerDelay * _lateDelayCapSlots : null,
+      maxDelay: _initialFrameDone
+          ? widget.staggerDelay * _lateDelayCapSlots
+          : null,
       enabled: widget.enabled,
       child: child,
     );

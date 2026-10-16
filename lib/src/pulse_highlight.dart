@@ -40,6 +40,14 @@ class PulseHighlightController extends ChangeNotifier {
     _isPulsing = false;
     notifyListeners();
   }
+
+  /// Called by the attached widget after it stopped itself (for example
+  /// after `maxPulseCount` or a dismissing tap), so listeners learn that
+  /// [isPulsing] turned `false`.
+  void _notifyStoppedByWidget() {
+    _isPulsing = false;
+    notifyListeners();
+  }
 }
 
 /// Expanding pulse rings around a child to draw the user's attention.
@@ -84,10 +92,12 @@ class PulseHighlight extends StatefulWidget {
     this.enabled = true,
     this.shape = BoxShape.circle,
     this.borderRadius,
-  })  : assert(maxRadiusFactor >= 1.0, 'maxRadiusFactor must be at least 1.0'),
-        assert(ringCount > 0, 'ringCount must be at least 1'),
-        assert(maxPulseCount == null || maxPulseCount > 0,
-            'maxPulseCount must be at least 1 when provided');
+  }) : assert(maxRadiusFactor >= 1.0, 'maxRadiusFactor must be at least 1.0'),
+       assert(ringCount > 0, 'ringCount must be at least 1'),
+       assert(
+         maxPulseCount == null || maxPulseCount > 0,
+         'maxPulseCount must be at least 1 when provided',
+       );
 
   /// The widget the rings pulse around. Rendered above the rings.
   final Widget child;
@@ -215,11 +225,18 @@ class _PulseHighlightState extends State<PulseHighlight>
   }
 
   void _stopPulsing() {
+    // _syncPlayback updates the controller without notifying (it also runs
+    // during build), so remember whether it reported pulsing and notify its
+    // listeners here, outside of any build.
+    final PulseHighlightController? controller = widget.controller;
+    final bool wasPulsing = controller?.isPulsing ?? false;
     setState(() {
       _shouldPlay = false;
     });
-    widget.controller?._isPulsing = false;
     _syncPlayback();
+    if (controller != null && wasPulsing) {
+      controller._notifyStoppedByWidget();
+    }
   }
 
   void _syncPlayback() {
@@ -331,8 +348,7 @@ class _PulsePainter extends CustomPainter {
         canvas.drawCircle(size.center(Offset.zero), radius, paint);
       } else {
         final Rect rect = (Offset.zero & size).inflate(growth * eased);
-        final RRect rrect =
-            (borderRadius ?? BorderRadius.zero).toRRect(rect);
+        final RRect rrect = (borderRadius ?? BorderRadius.zero).toRRect(rect);
         canvas.drawRRect(rrect, paint);
       }
     }

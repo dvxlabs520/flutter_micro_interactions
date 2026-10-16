@@ -35,9 +35,8 @@ class LongPressMenu extends StatelessWidget {
     this.menuBorderRadius = 8.0,
     this.textStyle,
     this.iconColor,
-  })  : assert(menuElevation >= 0.0, 'menuElevation must be non-negative'),
-        assert(menuBorderRadius >= 0.0,
-            'menuBorderRadius must be non-negative');
+  }) : assert(menuElevation >= 0.0, 'menuElevation must be non-negative'),
+       assert(menuBorderRadius >= 0.0, 'menuBorderRadius must be non-negative');
 
   /// The widget that reacts to the long press.
   final Widget child;
@@ -78,15 +77,15 @@ class LongPressMenu extends StatelessWidget {
   }
 
   Future<void> _showContextMenu(
-      BuildContext context, Offset globalPosition) async {
+    BuildContext context,
+    Offset globalPosition,
+  ) async {
     if (enableHaptics) {
       HapticFeedback.mediumImpact();
     }
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final RenderBox overlay = Navigator.of(context)
-        .overlay!
-        .context
-        .findRenderObject()! as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
     final Offset localPosition = overlay.globalToLocal(globalPosition);
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(localPosition, localPosition),
@@ -118,8 +117,9 @@ class LongPressMenu extends StatelessWidget {
                 Text(
                   item.label,
                   style: item.destructive
-                      ? (textStyle ?? const TextStyle())
-                          .copyWith(color: scheme.error)
+                      ? (textStyle ?? const TextStyle()).copyWith(
+                          color: scheme.error,
+                        )
                       : textStyle,
                 ),
               ],

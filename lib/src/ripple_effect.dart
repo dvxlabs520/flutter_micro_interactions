@@ -13,6 +13,9 @@ import 'utils/motion.dart';
 /// When the platform requests reduced motion no ripples are painted, but
 /// [onTap] still fires.
 ///
+/// The child is laid out with the constraints given to this widget, so
+/// wrapping a widget in a [RippleEffect] does not change its size.
+///
 /// ```dart
 /// RippleEffect(
 ///   borderRadius: BorderRadius.circular(12),
@@ -33,8 +36,8 @@ class RippleEffect extends StatefulWidget {
     this.borderRadius,
     this.onTap,
     this.enabled = true,
-  })  : assert(rippleCount > 0, 'rippleCount must be at least 1'),
-        assert(rippleRadius > 0, 'rippleRadius must be positive');
+  }) : assert(rippleCount > 0, 'rippleCount must be at least 1'),
+       assert(rippleRadius > 0, 'rippleRadius must be positive');
 
   /// The widget the ripples are painted over.
   final Widget child;
@@ -97,10 +100,14 @@ class _RippleEffectState extends State<RippleEffect>
 
   void _startRipple(TapDownDetails details) {
     if (!widget.enabled || MicroMotion.isReduced(context)) return;
-    final AnimationController controller =
-        AnimationController(vsync: this, duration: widget.duration);
-    final _RippleEntry entry =
-        _RippleEntry(controller: controller, center: details.localPosition);
+    final AnimationController controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    final _RippleEntry entry = _RippleEntry(
+      controller: controller,
+      center: details.localPosition,
+    );
     controller.addStatusListener((AnimationStatus status) {
       if (status != AnimationStatus.completed) return;
       if (!mounted) return;
@@ -120,7 +127,8 @@ class _RippleEffectState extends State<RippleEffect>
     if (!widget.enabled) {
       return widget.child;
     }
-    final Color color = widget.rippleColor ??
+    final Color color =
+        widget.rippleColor ??
         Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
     return GestureDetector(
       onTapDown: _startRipple,
@@ -130,7 +138,11 @@ class _RippleEffectState extends State<RippleEffect>
       behavior: HitTestBehavior.opaque,
       child: ClipRRect(
         borderRadius: widget.borderRadius ?? BorderRadius.zero,
+        // Passthrough: the child gets this widget's own constraints, so a
+        // RippleEffect sizes exactly like its child would without it (for
+        // example it fills a tight width instead of shrinking to fit).
         child: Stack(
+          fit: StackFit.passthrough,
           children: <Widget>[
             widget.child,
             if (_ripples.isNotEmpty)
@@ -183,13 +195,15 @@ class _RipplePainter extends CustomPainter {
     final double spreadRatio = animationDuration.inMilliseconds == 0
         ? 0
         : rippleSpreadDuration.inMilliseconds /
-            animationDuration.inMilliseconds;
+              animationDuration.inMilliseconds;
 
     for (final _RippleEntry ripple in ripples) {
       final double progress = ripple.controller.value;
       for (int i = 0; i < rippleCount; i++) {
-        final double circleProgress =
-            (progress - i * spreadRatio).clamp(0.0, 1.0);
+        final double circleProgress = (progress - i * spreadRatio).clamp(
+          0.0,
+          1.0,
+        );
         if (circleProgress <= 0) continue;
 
         final double radius = rippleRadius * circleProgress;
@@ -221,6 +235,11 @@ class _RipplePainter extends CustomPainter {
 /// back to `colorScheme.primary` and [rippleColor] to `colorScheme.onPrimary`
 /// at 24% opacity. The button is exposed as a button to assistive
 /// technology and can be activated with Enter or Space when focused.
+///
+/// The button takes the size of [child] plus [padding] under loose
+/// constraints and fills the space it is given under tight ones (for
+/// example inside `SizedBox(width: double.infinity)` or a stretched
+/// [Column]), with [child] centered.
 ///
 /// ```dart
 /// RippleButton(
@@ -297,7 +316,13 @@ class RippleButton extends StatelessWidget {
               color: background,
               borderRadius: borderRadius,
             ),
-            child: Padding(padding: padding, child: child),
+            child: Padding(
+              padding: padding,
+              // Sizes to the child under loose constraints and centers it
+              // when the button is stretched, like Material buttons. The
+              // child itself still receives loose constraints.
+              child: Center(widthFactor: 1.0, heightFactor: 1.0, child: child),
+            ),
           ),
         ),
       ),
@@ -339,8 +364,10 @@ class WaterRippleController extends ChangeNotifier {
 /// The waves are purely decorative paint and never appear in the
 /// semantics tree.
 /// Use [autoPlay] to loop from the start, or drive playback with a
-/// [WaterRippleController]. When the platform requests reduced motion the
-/// animation never loops and the widget renders static.
+/// [WaterRippleController]. While not playing (before it starts, after
+/// `stop()`, or with [autoPlay] off and no controller) no waves are painted
+/// and only the child shows. When the platform requests reduced motion the
+/// animation never loops: a playing ripple shows static rings instead.
 ///
 /// ```dart
 /// WaterRipple(
@@ -429,7 +456,10 @@ class _WaterRippleState extends State<WaterRipple>
 
   void _handleControllerChanged() {
     if (!mounted) return;
-    _shouldPlay = widget.controller!.isPlaying;
+    // setState: whether the waves are painted at all depends on it.
+    setState(() {
+      _shouldPlay = widget.controller!.isPlaying;
+    });
     _syncPlayback();
   }
 
@@ -453,13 +483,17 @@ class _WaterRippleState extends State<WaterRipple>
   Widget build(BuildContext context) {
     final Color color =
         widget.rippleColor ?? Theme.of(context).colorScheme.primary;
+    // The CustomPaint stays in the tree while stopped (with no painter) so
+    // the child keeps its state when playback toggles.
     return RepaintBoundary(
       child: CustomPaint(
-        painter: _WaterRipplePainter(
-          animation: _animation,
-          rippleColor: color,
-          waveCount: widget.waveCount,
-        ),
+        painter: _shouldPlay
+            ? _WaterRipplePainter(
+                animation: _animation,
+                rippleColor: color,
+                waveCount: widget.waveCount,
+              )
+            : null,
         child: widget.child,
       ),
     );

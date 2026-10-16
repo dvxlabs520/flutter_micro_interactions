@@ -1,10 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 /// The [DecoratedBox] that HoverGlow paints its shadow with.
@@ -20,22 +23,30 @@ BoxDecoration _glowDecoration(WidgetTester tester) {
 
 void main() {
   group('HoverGlow', () {
-    testWidgets('renders its child without a glow at rest',
-        (WidgetTester tester) async {
+    testWidgets('renders its child without a glow at rest', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        _wrap(HoverGlow(child: SizedBox(width: 100, height: 50, child: Text('Hover')))),
+        _wrap(
+          HoverGlow(
+            child: SizedBox(width: 100, height: 50, child: Text('Hover')),
+          ),
+        ),
       );
       expect(find.text('Hover'), findsOneWidget);
       expect(_glowDecoration(tester).boxShadow, isNull);
     });
 
-    testWidgets('fades the glow in on hover and out on exit',
-        (WidgetTester tester) async {
+    testWidgets('fades the glow in on hover and out on exit', (
+      WidgetTester tester,
+    ) async {
       // Hover highlights require traditional focus highlight mode.
       FocusManager.instance.highlightStrategy =
           FocusHighlightStrategy.alwaysTraditional;
-      addTearDown(() => FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.automatic);
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
       bool? hovered;
       await tester.pumpWidget(
         _wrap(
@@ -47,8 +58,9 @@ void main() {
         ),
       );
 
-      final TestGesture gesture =
-          await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final TestGesture gesture = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+      );
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();
@@ -65,8 +77,91 @@ void main() {
       expect(_glowDecoration(tester).boxShadow, isNull);
     });
 
-    testWidgets('enabled false renders the child unchanged',
-        (WidgetTester tester) async {
+    testWidgets('adds no Tab focus stop of its own', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              HoverGlow(
+                child: TextButton(onPressed: () {}, child: const Text('First')),
+              ),
+              TextButton(onPressed: () {}, child: const Text('Second')),
+            ],
+          ),
+        ),
+      );
+
+      final FocusNode first = Focus.of(tester.element(find.text('First')));
+      final FocusNode second = Focus.of(tester.element(find.text('Second')));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(first.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(second.hasPrimaryFocus, isTrue);
+    });
+
+    testWidgets('a non-focusable child gets no focus stop', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(const HoverGlow(child: SizedBox(width: 100, height: 50))),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      // Whatever holds focus now, it is not inside the HoverGlow.
+      final BuildContext? focused = FocusManager.instance.primaryFocus?.context;
+      bool insideGlow = false;
+      focused?.visitAncestorElements((Element ancestor) {
+        if (ancestor.widget is HoverGlow) {
+          insideGlow = true;
+          return false;
+        }
+        return true;
+      });
+      expect(insideGlow, isFalse);
+    });
+
+    testWidgets('glows while a focusable descendant has keyboard focus', (
+      WidgetTester tester,
+    ) async {
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
+      await tester.pumpWidget(
+        _wrap(
+          HoverGlow(
+            glowColor: Colors.blue,
+            child: TextButton(onPressed: () {}, child: const Text('Inner')),
+          ),
+        ),
+      );
+      expect(_glowDecoration(tester).boxShadow, isNull);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      expect(
+        Focus.of(tester.element(find.text('Inner'))).hasPrimaryFocus,
+        isTrue,
+      );
+      expect(_glowDecoration(tester).boxShadow, isNotNull);
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(_glowDecoration(tester).boxShadow, isNull);
+    });
+
+    testWidgets('enabled false renders the child unchanged', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(HoverGlow(enabled: false, child: Text('Plain'))),
       );
@@ -80,12 +175,15 @@ void main() {
       );
     });
 
-    testWidgets('reduced motion switches the glow instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion switches the glow instantly', (
+      WidgetTester tester,
+    ) async {
       FocusManager.instance.highlightStrategy =
           FocusHighlightStrategy.alwaysTraditional;
-      addTearDown(() => FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.automatic);
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
@@ -95,7 +193,10 @@ void main() {
                 child: HoverGlow(
                   glowColor: Colors.red,
                   child: const SizedBox(
-                      width: 100, height: 50, child: Text('Hover')),
+                    width: 100,
+                    height: 50,
+                    child: Text('Hover'),
+                  ),
                 ),
               ),
             ),
@@ -103,8 +204,9 @@ void main() {
         ),
       );
 
-      final TestGesture gesture =
-          await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final TestGesture gesture = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+      );
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();
@@ -116,7 +218,9 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('disposal mid-fade does not throw', (WidgetTester tester) async {
+    testWidgets('disposal mid-fade does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           HoverGlow(
@@ -125,8 +229,9 @@ void main() {
         ),
       );
 
-      final TestGesture gesture =
-          await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final TestGesture gesture = await tester.createGesture(
+        kind: PointerDeviceKind.mouse,
+      );
       await gesture.addPointer(location: Offset.zero);
       addTearDown(gesture.removePointer);
       await tester.pump();

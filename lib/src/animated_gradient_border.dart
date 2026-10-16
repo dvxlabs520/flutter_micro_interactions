@@ -30,14 +30,19 @@ class AnimatedGradientBorderController extends ChangeNotifier {
   /// Whether the attached [AnimatedGradientBorder] is currently animating.
   bool get isPlaying => _isPlaying;
 
-  /// Starts (or resumes) the sweep animation.
+  /// Starts the sweep animation, or resumes it from the angle where [stop]
+  /// paused it.
   void start() {
     if (_isPlaying) return;
     _isPlaying = true;
     notifyListeners();
   }
 
-  /// Stops the sweep animation.
+  /// Pauses the sweep animation at its current angle.
+  ///
+  /// The border keeps showing the gradient where it stopped; it does not
+  /// jump back to the starting angle. Only reduced motion and
+  /// `enabled: false` show the static rest frame (angle 0).
   void stop() {
     if (!_isPlaying) return;
     _isPlaying = false;
@@ -67,8 +72,10 @@ class AnimatedGradientBorderController extends ChangeNotifier {
 /// on [backgroundColor].
 ///
 /// The border is decorative and adds no semantics; the child's semantics
-/// are untouched. Under reduced motion the border renders statically and
-/// never animates.
+/// are untouched. Stopping the sweep (through the controller or by turning
+/// [autoPlay] off) pauses it at its current angle. Under reduced motion,
+/// and with [enabled] set to `false`, the border renders a static rest
+/// frame at the starting angle and never animates.
 class AnimatedGradientBorder extends StatefulWidget {
   /// Creates an animated gradient border around [child].
   const AnimatedGradientBorder({
@@ -85,8 +92,8 @@ class AnimatedGradientBorder extends StatefulWidget {
     this.backgroundColor,
     this.glowRadius = 0.0,
     this.enabled = true,
-  })  : assert(borderWidth >= 0, 'borderWidth must not be negative'),
-        assert(glowRadius >= 0, 'glowRadius must not be negative');
+  }) : assert(borderWidth >= 0, 'borderWidth must not be negative'),
+       assert(glowRadius >= 0, 'glowRadius must not be negative');
 
   /// The widget surrounded by the border.
   final Widget child;
@@ -131,8 +138,9 @@ class AnimatedGradientBorder extends StatefulWidget {
   /// 0 (the default) disables the glow.
   final double glowRadius;
 
-  /// When `false` the sweep never animates; the border renders statically
-  /// and the child renders normally. Defaults to `true`.
+  /// When `false` the sweep never animates; the border renders its static
+  /// rest frame (the starting angle) and the child renders normally.
+  /// Defaults to `true`.
   final bool enabled;
 
   @override
@@ -212,7 +220,12 @@ class _AnimatedGradientBorderState extends State<AnimatedGradientBorder>
       if (_controller.isAnimating) {
         _controller.stop();
       }
-      _controller.value = 0.0;
+      if (reduced || !widget.enabled) {
+        // Static rest frame: the sweep at angle 0.
+        _controller.value = 0.0;
+      }
+      // Otherwise (stopped through the controller or autoPlay) the sweep
+      // pauses at its current angle and a later start resumes from there.
     }
     widget.controller?._isPlaying = play;
   }
@@ -234,10 +247,8 @@ class _AnimatedGradientBorderState extends State<AnimatedGradientBorder>
 
   BorderRadius _innerRadius() {
     final double d = widget.borderWidth;
-    Radius deflate(Radius radius) => Radius.elliptical(
-          math.max(0, radius.x - d),
-          math.max(0, radius.y - d),
-        );
+    Radius deflate(Radius radius) =>
+        Radius.elliptical(math.max(0, radius.x - d), math.max(0, radius.y - d));
     final BorderRadius r = widget.borderRadius;
     return BorderRadius.only(
       topLeft: deflate(r.topLeft),
@@ -330,9 +341,9 @@ class _GradientBorderPainter extends CustomPainter {
       final Rect innerRect = rect.deflate(borderWidth);
       if (!innerRect.isEmpty) {
         Radius deflate(Radius radius) => Radius.elliptical(
-              math.max(0, radius.x - borderWidth),
-              math.max(0, radius.y - borderWidth),
-            );
+          math.max(0, radius.x - borderWidth),
+          math.max(0, radius.y - borderWidth),
+        );
         final RRect inner = RRect.fromRectAndCorners(
           innerRect,
           topLeft: deflate(borderRadius.topLeft),

@@ -3,7 +3,9 @@ import 'package:flutter_micro_interactions/src/success_burst.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 Finder _particleLayer() {
@@ -15,17 +17,17 @@ Finder _particleLayer() {
 
 void main() {
   group('SuccessBurst', () {
-    testWidgets('renders its child with no particle layer at rest',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(const SuccessBurst(child: Text('Done'))),
-      );
+    testWidgets('renders its child with no particle layer at rest', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const SuccessBurst(child: Text('Done'))));
       expect(find.text('Done'), findsOneWidget);
       expect(_particleLayer(), findsNothing);
     });
 
-    testWidgets('controller.burst paints particles and completes',
-        (WidgetTester tester) async {
+    testWidgets('controller.burst paints particles and completes', (
+      WidgetTester tester,
+    ) async {
       final SuccessBurstController controller = SuccessBurstController();
       addTearDown(controller.dispose);
       int completed = 0;
@@ -53,8 +55,9 @@ void main() {
       expect(completed, 1);
     });
 
-    testWidgets('concurrent bursts each complete and fire onCompleted',
-        (WidgetTester tester) async {
+    testWidgets('concurrent bursts each complete and fire onCompleted', (
+      WidgetTester tester,
+    ) async {
       final SuccessBurstController controller = SuccessBurstController();
       addTearDown(controller.dispose);
       int completed = 0;
@@ -84,8 +87,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('burstOnTap triggers a burst on tap',
-        (WidgetTester tester) async {
+    testWidgets('burstOnTap triggers a burst on tap', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           const SuccessBurst(
@@ -105,8 +109,9 @@ void main() {
       expect(_particleLayer(), findsNothing);
     });
 
-    testWidgets('enabled false ignores controller and taps',
-        (WidgetTester tester) async {
+    testWidgets('enabled false ignores controller and taps', (
+      WidgetTester tester,
+    ) async {
       final SuccessBurstController controller = SuccessBurstController();
       addTearDown(controller.dispose);
       int completed = 0;
@@ -131,8 +136,9 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('reduced motion: no particles but onCompleted still fires',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion: no particles but onCompleted still fires', (
+      WidgetTester tester,
+    ) async {
       final SuccessBurstController controller = SuccessBurstController();
       addTearDown(controller.dispose);
       int completed = 0;
@@ -162,8 +168,9 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('disposal mid-burst does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-burst does not throw', (
+      WidgetTester tester,
+    ) async {
       final SuccessBurstController controller = SuccessBurstController();
       addTearDown(controller.dispose);
 
@@ -184,8 +191,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('swapping controllers rewires burst triggering',
-        (WidgetTester tester) async {
+    testWidgets('swapping controllers rewires burst triggering', (
+      WidgetTester tester,
+    ) async {
       final SuccessBurstController first = SuccessBurstController();
       final SuccessBurstController second = SuccessBurstController();
       addTearDown(first.dispose);

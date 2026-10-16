@@ -12,6 +12,10 @@ import 'utils/motion.dart';
 /// When the platform requests reduced motion the glow switches instantly
 /// instead of animating.
 ///
+/// HoverGlow adds no focus stop of its own: keyboard focus glow appears
+/// while a focusable descendant (for example a button passed as [child])
+/// has focus. Wrapping a non-focusable child gives a hover-only glow.
+///
 /// ```dart
 /// HoverGlow(
 ///   borderRadius: BorderRadius.circular(12),
@@ -35,10 +39,12 @@ class HoverGlow extends StatefulWidget {
     this.curve = Curves.easeInOut,
     this.onHoverChanged,
     this.enabled = true,
-  })  : assert(glowRadius >= 0, 'glowRadius must not be negative'),
-        assert(spreadRadius >= 0, 'spreadRadius must not be negative'),
-        assert(glowOpacity >= 0 && glowOpacity <= 1.0,
-            'glowOpacity must be in [0, 1]');
+  }) : assert(glowRadius >= 0, 'glowRadius must not be negative'),
+       assert(spreadRadius >= 0, 'spreadRadius must not be negative'),
+       assert(
+         glowOpacity >= 0 && glowOpacity <= 1.0,
+         'glowOpacity must be in [0, 1]',
+       );
 
   /// The widget that receives the glow.
   final Widget child;
@@ -83,6 +89,15 @@ class _HoverGlowState extends State<HoverGlow>
   bool _hovered = false;
   bool _focused = false;
 
+  /// The node of the internal focus detector. It can never take focus and
+  /// is skipped by traversal, so HoverGlow adds no Tab stop of its own; it
+  /// only reports when a focusable descendant gains or loses focus.
+  final FocusNode _focusNode = FocusNode(
+    debugLabel: 'HoverGlow',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -109,6 +124,7 @@ class _HoverGlowState extends State<HoverGlow>
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _animation.dispose();
     _controller.dispose();
     super.dispose();
@@ -146,6 +162,7 @@ class _HoverGlowState extends State<HoverGlow>
     final Color color =
         widget.glowColor ?? Theme.of(context).colorScheme.primary;
     return FocusableActionDetector(
+      focusNode: _focusNode,
       onShowHoverHighlight: _handleHoverHighlight,
       onShowFocusHighlight: _handleFocusHighlight,
       child: AnimatedBuilder(

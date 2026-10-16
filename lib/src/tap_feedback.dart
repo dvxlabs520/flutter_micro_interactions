@@ -61,10 +61,9 @@ class TapFeedback extends StatefulWidget {
     this.enableHaptics = true,
     this.enabled = true,
     this.semanticLabel,
-  })  : assert(scaleDown > 0 && scaleDown <= 1.0,
-            'scaleDown must be in (0, 1]'),
-        assert(scaleUp >= 1.0, 'scaleUp must be >= 1.0'),
-        assert(opacity >= 0 && opacity <= 1.0, 'opacity must be in [0, 1]');
+  }) : assert(scaleDown > 0 && scaleDown <= 1.0, 'scaleDown must be in (0, 1]'),
+       assert(scaleUp >= 1.0, 'scaleUp must be >= 1.0'),
+       assert(opacity >= 0 && opacity <= 1.0, 'opacity must be in [0, 1]');
 
   /// The widget below this widget in the tree.
   final Widget child;
@@ -268,13 +267,15 @@ class _TapFeedbackState extends State<TapFeedback>
     super.dispose();
   }
 
-  Animatable<double> _pressScaleTween() =>
-      Tween<double>(begin: 1.0, end: widget.scaleDown)
-          .chain(CurveTween(curve: widget.curve));
+  Animatable<double> _pressScaleTween() => Tween<double>(
+    begin: 1.0,
+    end: widget.scaleDown,
+  ).chain(CurveTween(curve: widget.curve));
 
-  Animatable<double> _pressOpacityTween() =>
-      Tween<double>(begin: 1.0, end: widget.opacity)
-          .chain(CurveTween(curve: widget.curve));
+  Animatable<double> _pressOpacityTween() => Tween<double>(
+    begin: 1.0,
+    end: widget.opacity,
+  ).chain(CurveTween(curve: widget.curve));
 
   void _handleTapDown(TapDownDetails details) {
     if (!widget.enabled) return;
@@ -298,13 +299,17 @@ class _TapFeedbackState extends State<TapFeedback>
       _scale.parent = _controller.drive(
         TweenSequence<double>(<TweenSequenceItem<double>>[
           TweenSequenceItem<double>(
-            tween: Tween<double>(begin: widget.scaleDown, end: widget.scaleUp)
-                .chain(CurveTween(curve: Curves.easeOut)),
+            tween: Tween<double>(
+              begin: widget.scaleDown,
+              end: widget.scaleUp,
+            ).chain(CurveTween(curve: Curves.easeOut)),
             weight: 55,
           ),
           TweenSequenceItem<double>(
-            tween: Tween<double>(begin: widget.scaleUp, end: 1.0)
-                .chain(CurveTween(curve: Curves.easeIn)),
+            tween: Tween<double>(
+              begin: widget.scaleUp,
+              end: 1.0,
+            ).chain(CurveTween(curve: Curves.easeIn)),
             weight: 45,
           ),
         ]),
@@ -345,18 +350,24 @@ class _TapFeedbackState extends State<TapFeedback>
       _scale.parent = _controller.drive(
         TweenSequence<double>(<TweenSequenceItem<double>>[
           TweenSequenceItem<double>(
-            tween: Tween<double>(begin: 1.0, end: widget.scaleDown)
-                .chain(CurveTween(curve: Curves.easeOut)),
+            tween: Tween<double>(
+              begin: 1.0,
+              end: widget.scaleDown,
+            ).chain(CurveTween(curve: Curves.easeOut)),
             weight: 30,
           ),
           TweenSequenceItem<double>(
-            tween: Tween<double>(begin: widget.scaleDown, end: widget.scaleUp)
-                .chain(CurveTween(curve: Curves.easeOut)),
+            tween: Tween<double>(
+              begin: widget.scaleDown,
+              end: widget.scaleUp,
+            ).chain(CurveTween(curve: Curves.easeOut)),
             weight: 40,
           ),
           TweenSequenceItem<double>(
-            tween: Tween<double>(begin: widget.scaleUp, end: 1.0)
-                .chain(CurveTween(curve: Curves.easeIn)),
+            tween: Tween<double>(
+              begin: widget.scaleUp,
+              end: 1.0,
+            ).chain(CurveTween(curve: Curves.easeIn)),
             weight: 30,
           ),
         ]),

@@ -1,23 +1,23 @@
 name: flutter_micro_interactions
 description: >-
-  Pre-built micro-interactions and animations for Flutter: tap feedback, toasts,
-  shimmer buttons, slide-to-confirm, staggered lists, typewriter text, and more.
-version: 0.2.0
-homepage: https://github.com/dvillegastech/flutter_micro_interactions
-repository: https://github.com/dvillegastech/flutter_micro_interactions
-issue_tracker: https://github.com/dvillegastech/flutter_micro_interactions/issues
-documentation: https://github.com/dvillegastech/flutter_micro_interactions#readme
+  Micro-interactions and clean animations for Flutter, including AI interface
+  motion: border beam, thinking orbs, streaming text, voice glow, and more.
+version: 0.3.0
+homepage: https://github.com/dvxlabs520/flutter_micro_interactions
+repository: https://github.com/dvxlabs520/flutter_micro_interactions
+issue_tracker: https://github.com/dvxlabs520/flutter_micro_interactions/issues
+documentation: https://github.com/dvxlabs520/flutter_micro_interactions#readme
 
 topics:
   - animation
   - ui
   - widgets
   - micro-interactions
-  - flutter
+  - ai
 
 environment:
-  sdk: '>=3.10.0 <4.0.0'
-  flutter: ">=3.38.0"
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
@@ -34,6 +34,9 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+
+  shaders:
+    - shaders/morph_slider.frag
 
   # To add assets to your package, add an assets section, like this:
   # assets:

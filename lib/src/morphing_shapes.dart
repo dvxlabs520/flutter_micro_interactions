@@ -312,10 +312,7 @@ class _MorphingShapesState extends State<MorphingShapes>
     if (!widget.morphOnTap) {
       return semantics;
     }
-    return GestureDetector(
-      onTap: _handleTap,
-      child: semantics,
-    );
+    return GestureDetector(onTap: _handleTap, child: semantics);
   }
 }
 
@@ -366,6 +363,9 @@ class ShapeMorph extends StatefulWidget {
   final Color? color;
 
   /// Whether the morph loops back and forth automatically.
+  ///
+  /// Turning it off while the loop runs stops the loop and settles on the
+  /// nearest of the two shapes.
   final bool autoReverse;
 
   /// Whether tapping toggles the morph (ignored while [autoReverse] is on).
@@ -388,6 +388,9 @@ class _ShapeMorphState extends State<ShapeMorph>
   late AnimationController _controller;
   late CurvedAnimation _animation;
 
+  /// Whether the auto reverse loop is currently running.
+  bool _looping = false;
+
   @override
   void initState() {
     super.initState();
@@ -406,6 +409,11 @@ class _ShapeMorphState extends State<ShapeMorph>
     super.didUpdateWidget(oldWidget);
     if (widget.duration != oldWidget.duration) {
       _controller.duration = widget.duration;
+      if (_looping) {
+        // A running repeat keeps the period it started with; restart it
+        // from the current value so the new duration applies right away.
+        _controller.repeat(reverse: true);
+      }
     }
     if (widget.curve != oldWidget.curve) {
       _animation.dispose();
@@ -418,14 +426,30 @@ class _ShapeMorphState extends State<ShapeMorph>
   }
 
   void _syncAutoReverse() {
-    final bool shouldLoop =
-        widget.autoReverse && widget.enabled && !MicroMotion.isReduced(context);
+    final bool reduced = MicroMotion.isReduced(context);
+    final bool shouldLoop = widget.autoReverse && widget.enabled && !reduced;
     if (shouldLoop) {
-      if (!_controller.isAnimating) {
+      if (!_looping) {
+        _looping = true;
         _controller.repeat(reverse: true);
       }
-    } else if (widget.autoReverse) {
-      _controller.stop();
+      return;
+    }
+    if (!_looping) {
+      return;
+    }
+    // Leaving the loop: stop repeating. When auto reverse itself was turned
+    // off (and motion is allowed), settle on the nearest of the two shapes
+    // so tap toggling starts from a clean end state.
+    _looping = false;
+    _controller.stop();
+    if (!widget.autoReverse && widget.enabled) {
+      final double target = _controller.value < 0.5 ? 0.0 : 1.0;
+      if (reduced) {
+        _controller.value = target;
+      } else {
+        _controller.animateTo(target);
+      }
     }
   }
 
@@ -484,10 +508,7 @@ class _ShapeMorphState extends State<ShapeMorph>
     if (widget.autoReverse || !widget.morphOnTap) {
       return semantics;
     }
-    return GestureDetector(
-      onTap: _toggle,
-      child: semantics,
-    );
+    return GestureDetector(onTap: _toggle, child: semantics);
   }
 }
 
@@ -551,19 +572,23 @@ class _MorphingShapePainter extends CustomPainter {
     }
     final Path path = _shapePath(shape, size);
     final List<PathMetric> metrics = path.computeMetrics().toList();
-    final double totalLength =
-        metrics.fold(0.0, (double sum, PathMetric m) => sum + m.length);
+    final double totalLength = metrics.fold(
+      0.0,
+      (double sum, PathMetric m) => sum + m.length,
+    );
     final List<Offset> points = <Offset>[];
     if (totalLength == 0) {
-      points.addAll(List<Offset>.filled(_sampleCount, size.center(Offset.zero)));
+      points.addAll(
+        List<Offset>.filled(_sampleCount, size.center(Offset.zero)),
+      );
     } else {
       for (int i = 0; i < _sampleCount; i++) {
         double distance = totalLength * i / _sampleCount;
         Offset position = size.center(Offset.zero);
         for (final PathMetric metric in metrics) {
           if (distance <= metric.length) {
-            position = metric.getTangentForOffset(distance)?.position ??
-                position;
+            position =
+                metric.getTangentForOffset(distance)?.position ?? position;
             break;
           }
           distance -= metric.length;
@@ -580,12 +605,15 @@ class _MorphingShapePainter extends CustomPainter {
     final double radius = math.min(size.width, size.height) / 2;
     switch (shape) {
       case MicroShapeType.circle:
-        return Path()
-          ..addOval(Rect.fromCircle(center: center, radius: radius));
+        return Path()..addOval(Rect.fromCircle(center: center, radius: radius));
       case MicroShapeType.square:
-        return Path()
-          ..addRect(Rect.fromCenter(
-              center: center, width: radius * 2, height: radius * 2));
+        return Path()..addRect(
+          Rect.fromCenter(
+            center: center,
+            width: radius * 2,
+            height: radius * 2,
+          ),
+        );
       case MicroShapeType.triangle:
         return Path()
           ..moveTo(center.dx, center.dy - radius)

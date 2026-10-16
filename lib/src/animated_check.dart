@@ -95,8 +95,8 @@ class AnimatedCheck extends StatefulWidget {
     this.onCompleted,
     this.semanticLabel,
     this.enabled = true,
-  })  : assert(size > 0.0, 'size must be positive'),
-        assert(strokeWidth > 0.0, 'strokeWidth must be positive');
+  }) : assert(size > 0.0, 'size must be positive'),
+       assert(strokeWidth > 0.0, 'strokeWidth must be positive');
 
   /// Which mark to draw. Defaults to [AnimatedCheckType.check].
   final AnimatedCheckType type;
@@ -283,12 +283,14 @@ class _AnimatedCheckState extends State<AnimatedCheck>
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final Color color = widget.color ??
+    final Color color =
+        widget.color ??
         (widget.type == AnimatedCheckType.check
             ? scheme.primary
             : scheme.error);
     final Color circleColor = widget.circleColor ?? color;
-    final String semanticLabel = widget.semanticLabel ??
+    final String semanticLabel =
+        widget.semanticLabel ??
         (widget.type == AnimatedCheckType.check ? 'Success' : 'Error');
 
     final Widget graphic = SizedBox(

@@ -30,10 +30,12 @@ class ElasticScrollPhysics extends ScrollPhysics {
     this.elasticity = 0.3,
     this.stiffness = 100.0,
     this.damping = 0.8,
-  })  : assert(elasticity > 0.0 && elasticity <= 1.0,
-            'elasticity must be in (0, 1]'),
-        assert(stiffness > 0.0, 'stiffness must be positive'),
-        assert(damping > 0.0, 'damping must be positive');
+  }) : assert(
+         elasticity > 0.0 && elasticity <= 1.0,
+         'elasticity must be in (0, 1]',
+       ),
+       assert(stiffness > 0.0, 'stiffness must be positive'),
+       assert(damping > 0.0, 'damping must be positive');
 
   /// How easily the content moves past the edge while dragging.
   ///
@@ -72,10 +74,10 @@ class ElasticScrollPhysics extends ScrollPhysics {
 
   @override
   SpringDescription get spring => SpringDescription.withDampingRatio(
-        mass: 0.5,
-        stiffness: stiffness,
-        ratio: damping,
-      );
+    mass: 0.5,
+    stiffness: stiffness,
+    ratio: damping,
+  );
 
   @override
   bool shouldAcceptUserOffset(ScrollMetrics position) => true;
@@ -89,26 +91,37 @@ class ElasticScrollPhysics extends ScrollPhysics {
       return offset;
     }
 
-    final double overscrollPastStart =
-        math.max(position.minScrollExtent - position.pixels, 0.0);
-    final double overscrollPastEnd =
-        math.max(position.pixels - position.maxScrollExtent, 0.0);
-    final double overscrollPast =
-        math.max(overscrollPastStart, overscrollPastEnd);
-    final bool easing = (overscrollPastStart > 0.0 && offset < 0.0) ||
+    final double overscrollPastStart = math.max(
+      position.minScrollExtent - position.pixels,
+      0.0,
+    );
+    final double overscrollPastEnd = math.max(
+      position.pixels - position.maxScrollExtent,
+      0.0,
+    );
+    final double overscrollPast = math.max(
+      overscrollPastStart,
+      overscrollPastEnd,
+    );
+    final bool easing =
+        (overscrollPastStart > 0.0 && offset < 0.0) ||
         (overscrollPastEnd > 0.0 && offset > 0.0);
 
     final double friction = easing
         // Apply less resistance when easing the overscroll.
         ? frictionFactor(
-            (overscrollPast - offset.abs()) / position.viewportDimension)
+            (overscrollPast - offset.abs()) / position.viewportDimension,
+          )
         : frictionFactor(overscrollPast / position.viewportDimension);
     final double direction = offset.sign;
     return direction * _applyFriction(overscrollPast, offset.abs(), friction);
   }
 
   static double _applyFriction(
-      double extentOutside, double absDelta, double gamma) {
+    double extentOutside,
+    double absDelta,
+    double gamma,
+  ) {
     assert(absDelta > 0);
     double total = 0.0;
     if (extentOutside > 0) {
@@ -127,7 +140,9 @@ class ElasticScrollPhysics extends ScrollPhysics {
 
   @override
   Simulation? createBallisticSimulation(
-      ScrollMetrics position, double velocity) {
+    ScrollMetrics position,
+    double velocity,
+  ) {
     final Tolerance tolerance = toleranceFor(position);
     if (velocity.abs() >= tolerance.velocity || position.outOfRange) {
       return BouncingScrollSimulation(
@@ -170,10 +185,12 @@ class ElasticScroll extends StatelessWidget {
     this.reverse = false,
     this.padding,
     this.enabled = true,
-  })  : assert(elasticity > 0.0 && elasticity <= 1.0,
-            'elasticity must be in (0, 1]'),
-        assert(stiffness > 0.0, 'stiffness must be positive'),
-        assert(damping > 0.0, 'damping must be positive');
+  }) : assert(
+         elasticity > 0.0 && elasticity <= 1.0,
+         'elasticity must be in (0, 1]',
+       ),
+       assert(stiffness > 0.0, 'stiffness must be positive'),
+       assert(damping > 0.0, 'damping must be positive');
 
   /// The content to scroll.
   final Widget child;
@@ -268,12 +285,14 @@ class ElasticListView extends StatelessWidget {
     this.reverse = false,
     this.padding,
     this.enabled = true,
-  })  : itemBuilder = null,
-        itemCount = null,
-        assert(elasticity > 0.0 && elasticity <= 1.0,
-            'elasticity must be in (0, 1]'),
-        assert(stiffness > 0.0, 'stiffness must be positive'),
-        assert(damping > 0.0, 'damping must be positive');
+  }) : itemBuilder = null,
+       itemCount = null,
+       assert(
+         elasticity > 0.0 && elasticity <= 1.0,
+         'elasticity must be in (0, 1]',
+       ),
+       assert(stiffness > 0.0, 'stiffness must be positive'),
+       assert(damping > 0.0, 'damping must be positive');
 
   /// Creates an elastic list view that builds items lazily.
   const ElasticListView.builder({
@@ -289,12 +308,14 @@ class ElasticListView extends StatelessWidget {
     this.reverse = false,
     this.padding,
     this.enabled = true,
-  })  : children = null,
-        assert(itemCount >= 0, 'itemCount must be non-negative'),
-        assert(elasticity > 0.0 && elasticity <= 1.0,
-            'elasticity must be in (0, 1]'),
-        assert(stiffness > 0.0, 'stiffness must be positive'),
-        assert(damping > 0.0, 'damping must be positive');
+  }) : children = null,
+       assert(itemCount >= 0, 'itemCount must be non-negative'),
+       assert(
+         elasticity > 0.0 && elasticity <= 1.0,
+         'elasticity must be in (0, 1]',
+       ),
+       assert(stiffness > 0.0, 'stiffness must be positive'),
+       assert(damping > 0.0, 'damping must be positive');
 
   /// The items of the list. `null` when using [ElasticListView.builder].
   final List<Widget>? children;
@@ -391,14 +412,16 @@ class ElasticGridView extends StatelessWidget {
     this.reverse = false,
     this.padding,
     this.enabled = true,
-  })  : itemBuilder = null,
-        itemCount = null,
-        assert(crossAxisCount > 0, 'crossAxisCount must be positive'),
-        assert(childAspectRatio > 0, 'childAspectRatio must be positive'),
-        assert(elasticity > 0.0 && elasticity <= 1.0,
-            'elasticity must be in (0, 1]'),
-        assert(stiffness > 0.0, 'stiffness must be positive'),
-        assert(damping > 0.0, 'damping must be positive');
+  }) : itemBuilder = null,
+       itemCount = null,
+       assert(crossAxisCount > 0, 'crossAxisCount must be positive'),
+       assert(childAspectRatio > 0, 'childAspectRatio must be positive'),
+       assert(
+         elasticity > 0.0 && elasticity <= 1.0,
+         'elasticity must be in (0, 1]',
+       ),
+       assert(stiffness > 0.0, 'stiffness must be positive'),
+       assert(damping > 0.0, 'damping must be positive');
 
   /// Creates an elastic grid that builds tiles lazily.
   const ElasticGridView.builder({
@@ -418,14 +441,16 @@ class ElasticGridView extends StatelessWidget {
     this.reverse = false,
     this.padding,
     this.enabled = true,
-  })  : children = null,
-        assert(itemCount >= 0, 'itemCount must be non-negative'),
-        assert(crossAxisCount > 0, 'crossAxisCount must be positive'),
-        assert(childAspectRatio > 0, 'childAspectRatio must be positive'),
-        assert(elasticity > 0.0 && elasticity <= 1.0,
-            'elasticity must be in (0, 1]'),
-        assert(stiffness > 0.0, 'stiffness must be positive'),
-        assert(damping > 0.0, 'damping must be positive');
+  }) : children = null,
+       assert(itemCount >= 0, 'itemCount must be non-negative'),
+       assert(crossAxisCount > 0, 'crossAxisCount must be positive'),
+       assert(childAspectRatio > 0, 'childAspectRatio must be positive'),
+       assert(
+         elasticity > 0.0 && elasticity <= 1.0,
+         'elasticity must be in (0, 1]',
+       ),
+       assert(stiffness > 0.0, 'stiffness must be positive'),
+       assert(damping > 0.0, 'damping must be positive');
 
   /// The tiles of the grid. `null` when using [ElasticGridView.builder].
   final List<Widget>? children;

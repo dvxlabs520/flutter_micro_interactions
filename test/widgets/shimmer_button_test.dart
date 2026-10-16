@@ -4,14 +4,16 @@ import 'package:flutter_micro_interactions/src/shimmer_button.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 /// The shimmer band overlay is the only SlideTransition in the button.
 Finder get _shimmerBand => find.descendant(
-      of: find.byType(ShimmerButton),
-      matching: find.byType(SlideTransition),
-    );
+  of: find.byType(ShimmerButton),
+  matching: find.byType(SlideTransition),
+);
 
 void main() {
   group('ShimmerButton', () {
@@ -24,8 +26,9 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
     });
 
-    testWidgets('fires onPressed immediately on tap-up',
-        (WidgetTester tester) async {
+    testWidgets('fires onPressed immediately on tap-up', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         _wrap(
@@ -41,8 +44,9 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
     });
 
-    testWidgets('shimmer sweeps, pauses, then sweeps again',
-        (WidgetTester tester) async {
+    testWidgets('shimmer sweeps, pauses, then sweeps again', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ShimmerButton(
@@ -79,8 +83,9 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
     });
 
-    testWidgets('onPressed null renders disabled: dimmed, no shimmer, no tap',
-        (WidgetTester tester) async {
+    testWidgets('onPressed null renders disabled: dimmed, no shimmer, no tap', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(const ShimmerButton(onPressed: null, child: Text('Buy'))),
       );
@@ -97,8 +102,9 @@ void main() {
       // No shimmer loop means no timers pending at the end of this test.
     });
 
-    testWidgets('enabled false never fires onPressed and shows no shimmer',
-        (WidgetTester tester) async {
+    testWidgets('enabled false never fires onPressed and shows no shimmer', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         _wrap(
@@ -115,8 +121,9 @@ void main() {
       expect(pressed, isFalse);
     });
 
-    testWidgets('reduced motion: no shimmer, still fully functional',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion: no shimmer, still fully functional', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         MediaQuery(
@@ -136,8 +143,9 @@ void main() {
       // No shimmer loop: no timers pending at the end of this test.
     });
 
-    testWidgets('press scales the button down and back',
-        (WidgetTester tester) async {
+    testWidgets('press scales the button down and back', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(ShimmerButton(onPressed: () {}, child: const Text('Buy'))),
       );
@@ -155,8 +163,9 @@ void main() {
           .value;
 
       expect(scale(), 1.0);
-      final TestGesture gesture =
-          await tester.startGesture(tester.getCenter(find.text('Buy')));
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(find.text('Buy')),
+      );
       // One pump to let the tap recognizer report the press and start the
       // controller, then one to advance the animation.
       await tester.pump(const Duration(milliseconds: 200));
@@ -169,8 +178,9 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
     });
 
-    testWidgets('keyboard focus shows a highlight and Enter activates',
-        (WidgetTester tester) async {
+    testWidgets('keyboard focus shows a highlight and Enter activates', (
+      WidgetTester tester,
+    ) async {
       bool pressed = false;
       await tester.pumpWidget(
         _wrap(
@@ -198,8 +208,9 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
     });
 
-    testWidgets('exposes button semantics with a label',
-        (WidgetTester tester) async {
+    testWidgets('exposes button semantics with a label', (
+      WidgetTester tester,
+    ) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       await tester.pumpWidget(
         _wrap(
@@ -226,8 +237,9 @@ void main() {
       await tester.pumpWidget(_wrap(const SizedBox()));
     });
 
-    testWidgets('disposing mid-sweep cancels the loop cleanly',
-        (WidgetTester tester) async {
+    testWidgets('disposing mid-sweep cancels the loop cleanly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(
           ShimmerButton(

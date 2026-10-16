@@ -54,8 +54,8 @@ class FloatingLabel extends StatefulWidget {
     this.minLines,
     this.duration = const Duration(milliseconds: 200),
     this.curve = Curves.easeOut,
-  })  : assert(maxLines == null || maxLines > 0, 'maxLines must be positive'),
-        assert(minLines == null || minLines > 0, 'minLines must be positive');
+  }) : assert(maxLines == null || maxLines > 0, 'maxLines must be positive'),
+       assert(minLines == null || minLines > 0, 'minLines must be positive');
 
   /// The text shown as the animated floating label.
   final String label;
@@ -182,8 +182,9 @@ class _FloatingLabelState extends State<FloatingLabel>
       _float = CurvedAnimation(parent: _floatController, curve: widget.curve);
     }
     if (widget.controller != oldWidget.controller) {
-      (oldWidget.controller ?? _internalController)
-          ?.removeListener(_updateFloat);
+      (oldWidget.controller ?? _internalController)?.removeListener(
+        _updateFloat,
+      );
       if (widget.controller != null && _internalController != null) {
         _internalController!.dispose();
         _internalController = null;
@@ -258,8 +259,8 @@ class _FloatingLabelState extends State<FloatingLabel>
     final Color labelColor = _hasError
         ? theme.colorScheme.error
         : _effectiveFocusNode.hasFocus
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurfaceVariant;
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
 
     return Stack(
       children: <Widget>[

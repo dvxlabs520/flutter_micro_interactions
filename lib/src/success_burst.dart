@@ -79,8 +79,8 @@ class SuccessBurst extends StatefulWidget {
     this.onCompleted,
     this.enabled = true,
     this.seed,
-  })  : assert(particleCount > 0, 'particleCount must be at least 1'),
-        assert(spreadRadius > 0, 'spreadRadius must be positive');
+  }) : assert(particleCount > 0, 'particleCount must be at least 1'),
+       assert(spreadRadius > 0, 'spreadRadius must be positive');
 
   /// The widget the particles burst from. Rendered unchanged.
   final Widget child;
@@ -207,8 +207,10 @@ class _SuccessBurstState extends State<SuccessBurst>
 
   void _burst() {
     if (!widget.enabled) return;
-    assert(widget.colors == null || widget.colors!.isNotEmpty,
-        'colors must not be empty when provided');
+    assert(
+      widget.colors == null || widget.colors!.isNotEmpty,
+      'colors must not be empty when provided',
+    );
     if (MicroMotion.isReduced(context)) {
       // No particles, but the completion callback still fires.
       Future<void>.delayed(Duration.zero).then((_) {
@@ -219,7 +221,8 @@ class _SuccessBurstState extends State<SuccessBurst>
     }
 
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final List<Color> colors = widget.colors ??
+    final List<Color> colors =
+        widget.colors ??
         <Color>[scheme.primary, scheme.secondary, scheme.tertiary];
 
     final List<_Particle> particles = List<_Particle>.generate(
@@ -244,10 +247,14 @@ class _SuccessBurstState extends State<SuccessBurst>
       },
     );
 
-    final AnimationController controller =
-        AnimationController(vsync: this, duration: widget.duration);
-    final _BurstBatch batch =
-        _BurstBatch(controller: controller, particles: particles);
+    final AnimationController controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    final _BurstBatch batch = _BurstBatch(
+      controller: controller,
+      particles: particles,
+    );
     controller.addStatusListener((AnimationStatus status) {
       if (status != AnimationStatus.completed) return;
       if (!mounted) return;
@@ -327,21 +334,22 @@ class _BurstPainter extends CustomPainter {
       final double t = batch.controller.value;
       final double eased = curve.transform(t);
       // Fade out over the second half of the burst.
-      final double opacity =
-          t < 0.5 ? 1.0 : (1.0 - (t - 0.5) * 2).clamp(0.0, 1.0);
+      final double opacity = t < 0.5
+          ? 1.0
+          : (1.0 - (t - 0.5) * 2).clamp(0.0, 1.0);
       if (opacity <= 0) continue;
 
       for (final _Particle particle in batch.particles) {
         final double distance = spreadRadius * particle.speed * eased;
-        final Offset position = center +
+        final Offset position =
+            center +
             Offset(
               math.cos(particle.angle) * distance,
               math.sin(particle.angle) * distance +
                   particle.gravity * spreadRadius * t * t,
             );
         final Paint paint = Paint()
-          ..color = particle.color
-              .withValues(alpha: particle.color.a * opacity)
+          ..color = particle.color.withValues(alpha: particle.color.a * opacity)
           ..style = PaintingStyle.fill;
 
         if (particle.isCircle) {

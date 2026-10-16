@@ -3,20 +3,24 @@ import 'package:flutter_micro_interactions/flutter_micro_interactions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: Center(child: child)));
+  return MaterialApp(
+    home: Scaffold(body: Center(child: child)),
+  );
 }
 
 void main() {
   group('FloatingLabel', () {
-    testWidgets('renders label and a real TextFormField',
-        (WidgetTester tester) async {
+    testWidgets('renders label and a real TextFormField', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_wrap(FloatingLabel(label: 'Email')));
       expect(find.text('Email'), findsOneWidget);
       expect(find.byType(TextFormField), findsOneWidget);
     });
 
-    testWidgets('shows the hint only once the label floats on focus',
-        (WidgetTester tester) async {
+    testWidgets('shows the hint only once the label floats on focus', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         _wrap(FloatingLabel(label: 'Email', hint: 'name@example.com')),
       );
@@ -31,17 +35,13 @@ void main() {
       expect(find.text('name@example.com'), findsNothing);
     });
 
-    testWidgets('label stays floated while the field has text',
-        (WidgetTester tester) async {
+    testWidgets('label stays floated while the field has text', (
+      WidgetTester tester,
+    ) async {
       final TextEditingController controller = TextEditingController();
       addTearDown(controller.dispose);
       await tester.pumpWidget(
-        _wrap(
-          FloatingLabel(
-            label: 'Email',
-            controller: controller,
-          ),
-        ),
+        _wrap(FloatingLabel(label: 'Email', controller: controller)),
       );
       final double restingY = tester.getTopLeft(find.text('Email')).dy;
 
@@ -55,8 +55,9 @@ void main() {
       expect(tester.getTopLeft(find.text('Email')).dy, lessThan(restingY));
     });
 
-    testWidgets('validator participates in Form.validate',
-        (WidgetTester tester) async {
+    testWidgets('validator participates in Form.validate', (
+      WidgetTester tester,
+    ) async {
       final GlobalKey<FormState> formKey = GlobalKey<FormState>();
       await tester.pumpWidget(
         _wrap(
@@ -65,7 +66,9 @@ void main() {
             child: FloatingLabel(
               label: 'Email',
               validator: (String? value) =>
-                  (value == null || !value.contains('@')) ? 'Invalid email' : null,
+                  (value == null || !value.contains('@'))
+                  ? 'Invalid email'
+                  : null,
             ),
           ),
         ),
@@ -81,12 +84,16 @@ void main() {
       expect(find.text('Invalid email'), findsNothing);
     });
 
-    testWidgets('onChanged fires as the user types',
-        (WidgetTester tester) async {
+    testWidgets('onChanged fires as the user types', (
+      WidgetTester tester,
+    ) async {
       String? latest;
       await tester.pumpWidget(
         _wrap(
-          FloatingLabel(label: 'Name', onChanged: (String value) => latest = value),
+          FloatingLabel(
+            label: 'Name',
+            onChanged: (String value) => latest = value,
+          ),
         ),
       );
       await tester.enterText(find.byType(TextFormField), 'abc');
@@ -94,8 +101,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('reduced motion floats the label instantly',
-        (WidgetTester tester) async {
+    testWidgets('reduced motion floats the label instantly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: MediaQuery(
@@ -117,8 +125,9 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('disposal mid-float does not throw',
-        (WidgetTester tester) async {
+    testWidgets('disposal mid-float does not throw', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_wrap(FloatingLabel(label: 'Email')));
       await tester.tap(find.byType(TextFormField));
       await tester.pump(const Duration(milliseconds: 50));

@@ -64,10 +64,10 @@ class LiquidProgress extends StatefulWidget {
     this.animateWave = true,
     this.enabled = true,
     this.semanticLabel,
-  })  : assert(value >= 0.0 && value <= 1.0, 'value must be within 0..1'),
-        assert(size > 0.0, 'size must be positive'),
-        assert(borderWidth >= 0.0, 'borderWidth must not be negative'),
-        assert(waveAmplitude >= 0.0, 'waveAmplitude must not be negative');
+  }) : assert(value >= 0.0 && value <= 1.0, 'value must be within 0..1'),
+       assert(size > 0.0, 'size must be positive'),
+       assert(borderWidth >= 0.0, 'borderWidth must not be negative'),
+       assert(waveAmplitude >= 0.0, 'waveAmplitude must not be negative');
 
   /// The progress, from 0.0 (empty) to 1.0 (full). Changing it animates
   /// the fill level to the new target.
@@ -158,12 +158,18 @@ class _LiquidProgressState extends State<LiquidProgress>
   @override
   void initState() {
     super.initState();
-    _waveController =
-        AnimationController(vsync: this, duration: widget.waveDuration);
-    _levelController =
-        AnimationController(vsync: this, duration: widget.valueDuration);
-    _levelCurve =
-        CurvedAnimation(parent: _levelController, curve: widget.valueCurve);
+    _waveController = AnimationController(
+      vsync: this,
+      duration: widget.waveDuration,
+    );
+    _levelController = AnimationController(
+      vsync: this,
+      duration: widget.valueDuration,
+    );
+    _levelCurve = CurvedAnimation(
+      parent: _levelController,
+      curve: widget.valueCurve,
+    );
     _levelTween = Tween<double>(begin: widget.value, end: widget.value);
     _level = _levelCurve.drive(_levelTween);
     _levelController.value = 1.0;
@@ -195,8 +201,10 @@ class _LiquidProgressState extends State<LiquidProgress>
     }
     if (widget.valueCurve != oldWidget.valueCurve) {
       _levelCurve.dispose();
-      _levelCurve =
-          CurvedAnimation(parent: _levelController, curve: widget.valueCurve);
+      _levelCurve = CurvedAnimation(
+        parent: _levelController,
+        curve: widget.valueCurve,
+      );
       _level = _levelCurve.drive(_levelTween);
     }
     if (widget.value != oldWidget.value) {
@@ -253,20 +261,23 @@ class _LiquidProgressState extends State<LiquidProgress>
   }
 
   Widget? _buildOverlay(
-      BuildContext context, Color liquidColor, Color backgroundColor) {
+    BuildContext context,
+    Color liquidColor,
+    Color backgroundColor,
+  ) {
     if (widget.center != null) {
       return Center(child: widget.center);
     }
     if (!widget.showPercentage) return null;
     final String label = '${(widget.value * 100).round()}%';
-    final TextStyle base = widget.percentageStyle ??
+    final TextStyle base =
+        widget.percentageStyle ??
         Theme.of(context).textTheme.titleMedium ??
         const TextStyle();
     final TextStyle overBackground = base.color != null
         ? base
         : base.copyWith(color: _contrastOn(backgroundColor));
-    final TextStyle overLiquid =
-        base.copyWith(color: _contrastOn(liquidColor));
+    final TextStyle overLiquid = base.copyWith(color: _contrastOn(liquidColor));
     // Classic two-layer technique: the base label contrasts with the
     // background; a second copy, clipped to the liquid area, contrasts
     // with the liquid. Together the text is legible at any fill level.
@@ -301,8 +312,11 @@ class _LiquidProgressState extends State<LiquidProgress>
     final bool isCircle = widget.shape == LiquidProgressShape.circle;
     final double width = isCircle ? widget.size : (widget.width ?? 160.0);
     final double height = isCircle ? widget.size : (widget.height ?? 72.0);
-    final Widget? overlay =
-        _buildOverlay(context, liquidColor, backgroundColor);
+    final Widget? overlay = _buildOverlay(
+      context,
+      liquidColor,
+      backgroundColor,
+    );
 
     // The semantics value always reports the target value, never a
     // mid-animation level; the painter is excluded entirely.
@@ -342,13 +356,16 @@ class _LiquidProgressState extends State<LiquidProgress>
 }
 
 /// Builds the outline path of the indicator for [size].
-Path _shapePath(Size size, LiquidProgressShape shape,
-    BorderRadius borderRadius) {
+Path _shapePath(
+  Size size,
+  LiquidProgressShape shape,
+  BorderRadius borderRadius,
+) {
   final Rect rect = Offset.zero & size;
   return switch (shape) {
     LiquidProgressShape.circle => Path()..addOval(rect),
-    LiquidProgressShape.rectangle => Path()
-      ..addRRect(borderRadius.toRRect(rect)),
+    LiquidProgressShape.rectangle =>
+      Path()..addRRect(borderRadius.toRRect(rect)),
   };
 }
 
@@ -359,15 +376,21 @@ Path _shapePath(Size size, LiquidProgressShape shape,
 /// (`2 * pi * n`), so the wave tiles seamlessly while it scrolls. The
 /// amplitude is clamped to the space above and below the surface line so
 /// the liquid never pokes outside the shape at levels near 0 or 1.
-Path _liquidPath(Size size, double level, double phase, double amplitude,
-    {double phaseShift = 0.0}) {
+Path _liquidPath(
+  Size size,
+  double level,
+  double phase,
+  double amplitude, {
+  double phaseShift = 0.0,
+}) {
   final double clamped = level.clamp(0.0, 1.0);
   if (clamped <= 0.0) return Path();
   final double w = size.width;
   final double h = size.height;
   final double surfaceY = h * (1.0 - clamped);
-  final double amp =
-      math.min(amplitude, math.min(surfaceY, h - surfaceY)).clamp(0.0, h);
+  final double amp = math
+      .min(amplitude, math.min(surfaceY, h - surfaceY))
+      .clamp(0.0, h);
   final int cycles = math.max(1, (w / 80.0).round());
   final int samples = cycles * 24;
   double waveY(double x) =>
@@ -419,8 +442,13 @@ class _LiquidProgressPainter extends CustomPainter {
     if (currentLevel > 0.0) {
       // Secondary wave: slightly smaller, phase-shifted, translucent.
       canvas.drawPath(
-        _liquidPath(size, currentLevel, phase.value, amplitude * 0.8,
-            phaseShift: 0.25),
+        _liquidPath(
+          size,
+          currentLevel,
+          phase.value,
+          amplitude * 0.8,
+          phaseShift: 0.25,
+        ),
         Paint()..color = liquidColor.withValues(alpha: liquidColor.a * 0.4),
       );
       canvas.drawPath(
@@ -434,10 +462,10 @@ class _LiquidProgressPainter extends CustomPainter {
       final Rect inset = (Offset.zero & size).deflate(borderWidth / 2);
       final Path borderPath = switch (shape) {
         LiquidProgressShape.circle => Path()..addOval(inset),
-        LiquidProgressShape.rectangle => Path()
-          ..addRRect(borderRadius
-              .toRRect(Offset.zero & size)
-              .deflate(borderWidth / 2)),
+        LiquidProgressShape.rectangle =>
+          Path()..addRRect(
+            borderRadius.toRRect(Offset.zero & size).deflate(borderWidth / 2),
+          ),
       };
       canvas.drawPath(
         borderPath,

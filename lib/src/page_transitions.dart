@@ -67,9 +67,11 @@ class MicroPageRoute<T> extends PageRoute<T> {
     this.maintainState = true,
     super.fullscreenDialog,
     super.settings,
-  })  : assert(duration >= Duration.zero, 'duration must not be negative'),
-        assert(reverseDuration >= Duration.zero,
-            'reverseDuration must not be negative');
+  }) : assert(duration >= Duration.zero, 'duration must not be negative'),
+       assert(
+         reverseDuration >= Duration.zero,
+         'reverseDuration must not be negative',
+       );
 
   /// The page to show.
   final Widget child;
@@ -125,33 +127,71 @@ class MicroPageRoute<T> extends PageRoute<T> {
   }
 
   // Tweens are static so buildTransitions does not allocate them per frame.
-  static final Tween<Offset> _slideRightTween =
-      Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero);
-  static final Tween<Offset> _slideLeftTween =
-      Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero);
-  static final Tween<Offset> _slideTopTween =
-      Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero);
-  static final Tween<Offset> _slideBottomTween =
-      Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
-  static final Tween<double> _quarterTurnTween =
-      Tween<double>(begin: -0.25, end: 0.0);
+  static final Tween<Offset> _slideRightTween = Tween<Offset>(
+    begin: const Offset(1, 0),
+    end: Offset.zero,
+  );
+  static final Tween<Offset> _slideLeftTween = Tween<Offset>(
+    begin: const Offset(-1, 0),
+    end: Offset.zero,
+  );
+  static final Tween<Offset> _slideTopTween = Tween<Offset>(
+    begin: const Offset(0, -1),
+    end: Offset.zero,
+  );
+  static final Tween<Offset> _slideBottomTween = Tween<Offset>(
+    begin: const Offset(0, 1),
+    end: Offset.zero,
+  );
+  static final Tween<double> _quarterTurnTween = Tween<double>(
+    begin: -0.25,
+    end: 0.0,
+  );
+
+  /// The curved view of the route animation, created once and reused by
+  /// every call to [buildTransitions]; disposed in [dispose].
+  CurvedAnimation? _curved;
+
+  /// Returns the cached [CurvedAnimation] for [parent], replacing it only if
+  /// the framework ever hands over a different parent animation.
+  CurvedAnimation _curvedFor(Animation<double> parent) {
+    final CurvedAnimation? cached = _curved;
+    if (cached != null && identical(cached.parent, parent)) {
+      return cached;
+    }
+    cached?.dispose();
+    return _curved = CurvedAnimation(parent: parent, curve: curve);
+  }
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation) {
+  void dispose() {
+    _curved?.dispose();
+    _curved = null;
+    super.dispose();
+  }
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     return child;
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     if (MicroMotion.isReduced(context)) {
       // Reduced motion: a plain fade for every transition type.
       return FadeTransition(opacity: animation, child: child);
     }
 
-    final Animation<double> curved =
-        CurvedAnimation(parent: animation, curve: curve);
+    final Animation<double> curved = _curvedFor(animation);
 
     switch (type) {
       case MicroTransitionType.fade:
